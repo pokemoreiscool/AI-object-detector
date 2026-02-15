@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI Object Detector</title>
+    <title>AI Object Detector - SUPER POWERED</title>
     
     <!-- TensorFlow.js and COCO-SSD Model -->
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.11.0"></script>
@@ -83,21 +83,14 @@
             border: 3px solid;
             border-radius: 8px;
             box-shadow: 0 0 20px rgba(74, 222, 128, 0.5);
-            transition: all 0.3s ease; /* Smooth, slow transitions */
+            transition: all 0.3s ease;
         }
 
         @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: scale(0.9);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
         }
 
-        /* Labels Bar - Fixed at bottom, always visible */
         .labels-bar {
             position: fixed;
             bottom: 120px;
@@ -108,7 +101,7 @@
             padding: 12px 15px;
             z-index: 99;
             display: none;
-            max-height: 120px;
+            max-height: 150px;
             overflow-y: auto;
         }
 
@@ -118,14 +111,8 @@
         }
 
         @keyframes slideUp {
-            from {
-                transform: translateY(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
         }
 
         .labels-container {
@@ -144,7 +131,7 @@
             font-weight: 700;
             color: #000;
             box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-            transition: all 0.3s ease; /* Smooth transitions only */
+            transition: all 0.3s ease;
         }
 
         .label-chip .confidence {
@@ -177,9 +164,7 @@
             gap: 8px;
         }
 
-        .btn:active {
-            transform: scale(0.95);
-        }
+        .btn:active { transform: scale(0.95); }
 
         .btn-primary {
             background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
@@ -197,10 +182,7 @@
             backdrop-filter: blur(10px);
         }
 
-        .icon {
-            width: 20px;
-            height: 20px;
-        }
+        .icon { width: 20px; height: 20px; }
 
         .init-screen {
             position: fixed;
@@ -218,9 +200,7 @@
             padding: 20px;
         }
 
-        .init-screen.hidden {
-            display: none;
-        }
+        .init-screen.hidden { display: none; }
 
         .init-content h2 {
             font-size: 28px;
@@ -259,9 +239,7 @@
             transition: transform 0.2s;
         }
 
-        .start-btn:active {
-            transform: scale(0.95);
-        }
+        .start-btn:active { transform: scale(0.95); }
 
         .detection-count {
             position: fixed;
@@ -292,9 +270,7 @@
             color: white;
         }
 
-        .loading-screen.hidden {
-            display: none;
-        }
+        .loading-screen.hidden { display: none; }
 
         .spinner {
             width: 60px;
@@ -331,52 +307,58 @@
             backdrop-filter: blur(10px);
         }
 
+        .power-badge {
+            position: fixed;
+            top: 125px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            z-index: 100;
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+        }
+
         @media (max-width: 640px) {
-            .header h1 {
-                font-size: 18px;
-            }
-            
-            .btn {
-                padding: 14px 22px;
-                font-size: 14px;
-            }
-            
-            .label-chip {
-                font-size: 12px;
-                padding: 6px 12px;
-            }
+            .header h1 { font-size: 18px; }
+            .btn { padding: 14px 22px; font-size: 14px; }
+            .label-chip { font-size: 12px; padding: 6px 12px; }
         }
     </style>
 </head>
 <body>
-    <!-- Loading Screen -->
     <div class="loading-screen" id="loadingScreen">
         <div class="spinner"></div>
-        <h2 class="loading-text">Loading AI Model</h2>
-        <p class="loading-subtext" style="opacity: 0.8; font-size: 14px;">This may take a moment...</p>
+        <h2 class="loading-text">Loading SUPER AI Model</h2>
+        <p class="loading-subtext" style="opacity: 0.8; font-size: 14px;">Preparing ultra-sensitive detection...</p>
     </div>
 
-    <!-- Welcome Screen -->
     <div class="init-screen hidden" id="initScreen">
         <div class="init-content">
-            <h2>🔍 AI Object Detector</h2>
-            <p>Real-time object detection powered by TensorFlow.js</p>
+            <h2>🔥 SUPER POWERED AI Detector</h2>
+            <p>Ultra-sensitive detection with maximum power!</p>
             <div class="feature-list">
-                <div class="feature-item">✨ Detects 80+ object types</div>
-                <div class="feature-item">⚡ Smart filtering (40%+ confidence)</div>
-                <div class="feature-item">🎯 Labels in fixed bar - always visible!</div>
-                <div class="feature-item">👁️ Smooth detection - no flicker or blinking</div>
+                <div class="feature-item">⚡ ULTRA SENSITIVE - Detects at 10% confidence!</div>
+                <div class="feature-item">🚀 FAST - 5 scans per second</div>
+                <div class="feature-item">💪 POWERFUL - Tracks up to 100 objects</div>
+                <div class="feature-item">🎯 Labels always visible at bottom</div>
+                <div class="feature-item">👁️ Smooth - No flashing</div>
                 <div class="feature-item">🔒 100% private - runs in browser</div>
-                <div class="feature-item">📱 Works on mobile & desktop</div>
             </div>
-            <button class="start-btn" id="startBtn">Launch Camera</button>
+            <button class="start-btn" id="startBtn">🚀 Launch Super Detector</button>
         </div>
     </div>
 
-    <!-- Main Interface -->
     <div class="header">
-        <h1>🤖 AI Object Detector</h1>
+        <h1>🔥 SUPER AI Object Detector</h1>
         <div class="status" id="status">Loading...</div>
+    </div>
+
+    <div class="power-badge" id="powerBadge" style="display: none;">
+        ⚡ ULTRA SENSITIVE MODE
     </div>
 
     <div class="detection-count" id="detectionCount" style="display: none;">0 objects</div>
@@ -387,7 +369,6 @@
         <div class="overlay-container" id="overlayContainer"></div>
     </div>
 
-    <!-- Labels Bar - Always at bottom, can't go off screen -->
     <div class="labels-bar" id="labelsBar">
         <div class="labels-container" id="labelsContainer"></div>
     </div>
@@ -421,6 +402,7 @@
         const loadingScreen = document.getElementById('loadingScreen');
         const startBtn = document.getElementById('startBtn');
         const fpsCounter = document.getElementById('fpsCounter');
+        const powerBadge = document.getElementById('powerBadge');
 
         let model = null;
         let currentStream = null;
@@ -430,27 +412,28 @@
         let lastFrameTime = Date.now();
         let fps = 0;
         let frameCount = 0;
-        let detectionHistory = new Map(); // Keep track of detections over time
+        let detectionHistory = new Map();
         let lastDetectionTime = Date.now();
 
         const colors = [
-            '#4ade80', '#3b82f6', '#f59e0b', '#ec4899', 
-            '#8b5cf6', '#10b981', '#f43f5e', '#06b6d4',
-            '#eab308', '#14b8a6', '#f97316', '#a855f7'
+            '#4ade80', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6', '#10b981', 
+            '#f43f5e', '#06b6d4', '#eab308', '#14b8a6', '#f97316', '#a855f7',
+            '#84cc16', '#22d3ee', '#fb923c', '#c084fc', '#34d399', '#fbbf24'
         ];
 
-        // Load AI model
+        // Load SUPER POWERFUL AI model
         async function loadModel() {
             try {
-                console.log('Loading COCO-SSD model...');
+                console.log('Loading SUPER POWERED COCO-SSD model...');
+                // Use mobilenet_v2 for better accuracy
                 model = await cocoSsd.load({
-                    base: 'lite_mobilenet_v2'
+                    base: 'mobilenet_v2' // More accurate than lite version
                 });
-                console.log('Model loaded successfully!');
+                console.log('SUPER Model loaded successfully!');
                 
                 loadingScreen.classList.add('hidden');
                 initScreen.classList.remove('hidden');
-                status.textContent = 'AI Ready!';
+                status.textContent = 'SUPER AI Ready! 🔥';
             } catch (error) {
                 console.error('Model load error:', error);
                 loadingScreen.innerHTML = `
@@ -475,8 +458,8 @@
                 const constraints = {
                     video: {
                         facingMode: facingMode,
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 }
+                        width: { ideal: 1920 }, // Higher resolution
+                        height: { ideal: 1080 }
                     }
                 };
 
@@ -484,7 +467,7 @@
                 video.srcObject = currentStream;
 
                 video.onloadedmetadata = () => {
-                    status.textContent = 'Ready to detect';
+                    status.textContent = 'Ready to detect EVERYTHING! 🚀';
                     toggleBtn.disabled = false;
                 };
             } catch (error) {
@@ -501,10 +484,11 @@
                 startDetection();
                 toggleBtn.classList.add('active');
                 btnText.textContent = 'Stop';
-                status.textContent = 'Detecting...';
+                status.textContent = 'SUPER DETECTING... 🔥';
                 status.classList.add('active');
                 detectionCount.style.display = 'block';
                 fpsCounter.style.display = 'block';
+                powerBadge.style.display = 'block';
                 labelsBar.classList.add('show');
             } else {
                 stopDetection();
@@ -514,6 +498,7 @@
                 status.classList.remove('active');
                 detectionCount.style.display = 'none';
                 fpsCounter.style.display = 'none';
+                powerBadge.style.display = 'none';
                 labelsBar.classList.remove('show');
             }
         });
@@ -526,9 +511,7 @@
             }
             initCamera().then(() => {
                 if (wasDetecting) {
-                    setTimeout(() => {
-                        toggleBtn.click();
-                    }, 500);
+                    setTimeout(() => toggleBtn.click(), 500);
                 }
             });
         });
@@ -544,7 +527,7 @@
                 cancelAnimationFrame(animationFrameId);
                 animationFrameId = null;
             }
-            detectionHistory.clear(); // Clear detection history
+            detectionHistory.clear();
             clearDetections();
         }
 
@@ -563,15 +546,15 @@
                     lastFrameTime = now;
                 }
 
-                // Only run detection every 500ms (2 times per second) to prevent blinking
+                // FASTER: Detect every 200ms (5 times per second)
                 const timeSinceLastDetection = now - lastDetectionTime;
-                if (timeSinceLastDetection >= 500) {
-                    const predictions = await model.detect(video, 20);
+                if (timeSinceLastDetection >= 200) {
+                    // POWERFUL: Detect up to 100 objects with max detections
+                    const predictions = await model.detect(video, 100);
                     updateDetectionHistory(predictions);
                     lastDetectionTime = now;
                 }
 
-                // Always draw from history (keeps detections stable)
                 drawDetectionsFromHistory();
 
             } catch (error) {
@@ -583,23 +566,25 @@
 
         function updateDetectionHistory(predictions) {
             const now = Date.now();
-            const minConfidence = 0.4;
+            // ULTRA SENSITIVE: Accept 10% confidence or higher!
+            const minConfidence = 0.10; // 10% minimum - detects almost everything!
             
-            // Add new detections to history
             predictions.forEach(pred => {
                 if (pred.score >= minConfidence) {
-                    const key = pred.class;
+                    const key = `${pred.class}_${Math.round(pred.bbox[0])}_${Math.round(pred.bbox[1])}`;
                     detectionHistory.set(key, {
                         prediction: pred,
                         lastSeen: now,
-                        color: detectionHistory.has(key) ? detectionHistory.get(key).color : colors[detectionHistory.size % colors.length]
+                        color: detectionHistory.has(key) ? 
+                            detectionHistory.get(key).color : 
+                            colors[detectionHistory.size % colors.length]
                     });
                 }
             });
 
-            // Remove old detections (not seen in last 2 seconds)
+            // Keep detections for 1 second (faster updates)
             for (let [key, data] of detectionHistory.entries()) {
-                if (now - data.lastSeen > 2000) {
+                if (now - data.lastSeen > 1000) {
                     detectionHistory.delete(key);
                 }
             }
@@ -614,7 +599,7 @@
             const scaleY = videoRect.height / video.videoHeight;
 
             let count = 0;
-            for (let [objectClass, data] of detectionHistory.entries()) {
+            for (let [key, data] of detectionHistory.entries()) {
                 const prediction = data.prediction;
                 const [x, y, width, height] = prediction.bbox;
                 const color = data.color;
@@ -628,7 +613,7 @@
                 box.style.height = (height * scaleY) + 'px';
                 box.style.borderColor = color;
                 box.style.boxShadow = `0 0 20px ${color}80`;
-                box.style.transition = 'all 0.3s ease'; // Smooth transitions
+                box.style.transition = 'all 0.3s ease';
 
                 overlayContainer.appendChild(box);
 
@@ -636,10 +621,10 @@
                 const labelChip = document.createElement('div');
                 labelChip.className = 'label-chip';
                 labelChip.style.backgroundColor = color;
-                labelChip.style.transition = 'all 0.3s ease'; // Smooth transitions
+                labelChip.style.transition = 'all 0.3s ease';
                 
                 const confidence = Math.round(prediction.score * 100);
-                labelChip.innerHTML = `${objectClass}<span class="confidence">${confidence}%</span>`;
+                labelChip.innerHTML = `${prediction.class}<span class="confidence">${confidence}%</span>`;
 
                 labelsContainer.appendChild(labelChip);
                 count++;
