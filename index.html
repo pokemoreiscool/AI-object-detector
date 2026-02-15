@@ -53,10 +53,6 @@
             color: #4ade80;
         }
 
-        .status.loading {
-            color: #fbbf24;
-        }
-
         .camera-container {
             position: relative;
             width: 100%;
@@ -91,17 +87,6 @@
             transition: all 0.15s ease;
         }
 
-        .detection-label {
-            /* Styling only - positioning handled by JavaScript */
-            animation: fadeIn 0.2s ease;
-        }
-
-        .confidence {
-            font-size: 11px;
-            opacity: 0.8;
-            margin-left: 5px;
-        }
-
         @keyframes fadeIn {
             from {
                 opacity: 0;
@@ -111,6 +96,62 @@
                 opacity: 1;
                 transform: scale(1);
             }
+        }
+
+        /* Labels Bar - Fixed at bottom, always visible */
+        .labels-bar {
+            position: fixed;
+            bottom: 120px;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            padding: 12px 15px;
+            z-index: 99;
+            display: none;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+
+        .labels-bar.show {
+            display: block;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .labels-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .label-chip {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 700;
+            color: #000;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            animation: fadeIn 0.2s ease;
+        }
+
+        .label-chip .confidence {
+            font-size: 11px;
+            opacity: 0.7;
+            margin-left: 6px;
         }
 
         .controls {
@@ -155,10 +196,6 @@
             background: rgba(255,255,255,0.15);
             color: white;
             backdrop-filter: blur(10px);
-        }
-
-        .btn-secondary:hover {
-            background: rgba(255,255,255,0.25);
         }
 
         .icon {
@@ -280,11 +317,6 @@
             margin-bottom: 10px;
         }
 
-        .loading-subtext {
-            opacity: 0.8;
-            font-size: 14px;
-        }
-
         .fps-counter {
             position: fixed;
             top: 85px;
@@ -300,27 +332,6 @@
             backdrop-filter: blur(10px);
         }
 
-        .info-badge {
-            position: fixed;
-            bottom: 120px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 12px 20px;
-            border-radius: 25px;
-            font-size: 12px;
-            z-index: 100;
-            backdrop-filter: blur(10px);
-            opacity: 0;
-            animation: fadeInOut 4s ease-in-out;
-        }
-
-        @keyframes fadeInOut {
-            0%, 100% { opacity: 0; }
-            10%, 90% { opacity: 1; }
-        }
-
         @media (max-width: 640px) {
             .header h1 {
                 font-size: 18px;
@@ -331,10 +342,9 @@
                 font-size: 14px;
             }
             
-            .detection-label {
+            .label-chip {
                 font-size: 12px;
-                padding: 5px 10px;
-                bottom: -30px;
+                padding: 6px 12px;
             }
         }
     </style>
@@ -344,7 +354,7 @@
     <div class="loading-screen" id="loadingScreen">
         <div class="spinner"></div>
         <h2 class="loading-text">Loading AI Model</h2>
-        <p class="loading-subtext">This may take a moment...</p>
+        <p class="loading-subtext" style="opacity: 0.8; font-size: 14px;">This may take a moment...</p>
     </div>
 
     <!-- Welcome Screen -->
@@ -354,8 +364,8 @@
             <p>Real-time object detection powered by TensorFlow.js</p>
             <div class="feature-list">
                 <div class="feature-item">✨ Detects 80+ object types</div>
-                <div class="feature-item">⚡ Smart filtering - only shows confident detections (40%+)</div>
-                <div class="feature-item">🎯 Labels stay on screen automatically</div>
+                <div class="feature-item">⚡ Smart filtering (40%+ confidence)</div>
+                <div class="feature-item">🎯 Labels in fixed bar - always visible!</div>
                 <div class="feature-item">🔒 100% private - runs in browser</div>
                 <div class="feature-item">📱 Works on mobile & desktop</div>
             </div>
@@ -377,6 +387,11 @@
         <div class="overlay-container" id="overlayContainer"></div>
     </div>
 
+    <!-- Labels Bar - Always at bottom, can't go off screen -->
+    <div class="labels-bar" id="labelsBar">
+        <div class="labels-container" id="labelsContainer"></div>
+    </div>
+
     <div class="controls">
         <button class="btn btn-primary" id="toggleBtn" disabled>
             <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -395,6 +410,8 @@
     <script>
         const video = document.getElementById('video');
         const overlayContainer = document.getElementById('overlayContainer');
+        const labelsBar = document.getElementById('labelsBar');
+        const labelsContainer = document.getElementById('labelsContainer');
         const toggleBtn = document.getElementById('toggleBtn');
         const btnText = document.getElementById('btnText');
         const switchCameraBtn = document.getElementById('switchCamera');
@@ -420,13 +437,12 @@
             '#eab308', '#14b8a6', '#f97316', '#a855f7'
         ];
 
-        // Load AI model with optimized settings
+        // Load AI model
         async function loadModel() {
             try {
                 console.log('Loading COCO-SSD model...');
-                // Load with better model base for improved accuracy
                 model = await cocoSsd.load({
-                    base: 'lite_mobilenet_v2' // Faster and more accurate for real-time
+                    base: 'lite_mobilenet_v2'
                 });
                 console.log('Model loaded successfully!');
                 
@@ -443,13 +459,11 @@
             }
         }
 
-        // Start button
         startBtn.addEventListener('click', () => {
             initScreen.classList.add('hidden');
             initCamera();
         });
 
-        // Initialize camera
         async function initCamera() {
             try {
                 if (currentStream) {
@@ -478,7 +492,6 @@
             }
         }
 
-        // Toggle detection
         toggleBtn.addEventListener('click', () => {
             isDetecting = !isDetecting;
             
@@ -490,6 +503,7 @@
                 status.classList.add('active');
                 detectionCount.style.display = 'block';
                 fpsCounter.style.display = 'block';
+                labelsBar.classList.add('show');
             } else {
                 stopDetection();
                 toggleBtn.classList.remove('active');
@@ -498,10 +512,10 @@
                 status.classList.remove('active');
                 detectionCount.style.display = 'none';
                 fpsCounter.style.display = 'none';
+                labelsBar.classList.remove('show');
             }
         });
 
-        // Switch camera
         switchCameraBtn.addEventListener('click', () => {
             facingMode = facingMode === 'environment' ? 'user' : 'environment';
             const wasDetecting = isDetecting;
@@ -517,14 +531,12 @@
             });
         });
 
-        // Start real-time detection
         function startDetection() {
             lastFrameTime = Date.now();
             frameCount = 0;
             detectFrame();
         }
 
-        // Stop detection
         function stopDetection() {
             if (animationFrameId) {
                 cancelAnimationFrame(animationFrameId);
@@ -533,12 +545,10 @@
             clearDetections();
         }
 
-        // Detect objects in frame
         async function detectFrame() {
             if (!isDetecting || !model) return;
 
             try {
-                // Calculate FPS
                 frameCount++;
                 const now = Date.now();
                 const elapsed = now - lastFrameTime;
@@ -550,13 +560,9 @@
                     lastFrameTime = now;
                 }
 
-                // Detect objects with higher max detections for better coverage
                 const predictions = await model.detect(video, 20);
-                
-                // Draw detections (filtering happens inside drawDetections)
                 drawDetections(predictions);
                 
-                // Count only high-confidence detections (>40%)
                 const highConfidenceCount = predictions.filter(p => p.score >= 0.4).length;
                 detectionCount.textContent = `${highConfidenceCount} object${highConfidenceCount !== 1 ? 's' : ''}`;
 
@@ -564,25 +570,23 @@
                 console.error('Detection error:', error);
             }
 
-            // Continue detecting
             animationFrameId = requestAnimationFrame(detectFrame);
         }
 
-        // Draw detections on overlay
         function drawDetections(predictions) {
             overlayContainer.innerHTML = '';
+            labelsContainer.innerHTML = '';
 
             const videoRect = video.getBoundingClientRect();
             const scaleX = videoRect.width / video.videoWidth;
             const scaleY = videoRect.height / video.videoHeight;
 
-            // Filter predictions: only show high confidence (>40%) and remove duplicates
+            // Filter predictions
             const filteredPredictions = [];
-            const minConfidence = 0.4; // 40% minimum confidence
+            const minConfidence = 0.4;
             
             predictions.forEach(pred => {
                 if (pred.score >= minConfidence) {
-                    // Check for duplicates in same area
                     const isDuplicate = filteredPredictions.some(existing => {
                         const [ex, ey] = existing.bbox;
                         const [px, py] = pred.bbox;
@@ -600,98 +604,35 @@
                 const [x, y, width, height] = prediction.bbox;
                 const color = colors[index % colors.length];
                 
-                // Calculate scaled positions
-                const boxLeft = x * scaleX;
-                const boxTop = y * scaleY;
-                const boxWidth = width * scaleX;
-                const boxHeight = height * scaleY;
-                const boxBottom = boxTop + boxHeight;
-                const boxRight = boxLeft + boxWidth;
-                
-                // Create box
+                // Draw box
                 const box = document.createElement('div');
                 box.className = 'detection-box';
-                box.style.left = boxLeft + 'px';
-                box.style.top = boxTop + 'px';
-                box.style.width = boxWidth + 'px';
-                box.style.height = boxHeight + 'px';
+                box.style.left = (x * scaleX) + 'px';
+                box.style.top = (y * scaleY) + 'px';
+                box.style.width = (width * scaleX) + 'px';
+                box.style.height = (height * scaleY) + 'px';
                 box.style.borderColor = color;
                 box.style.boxShadow = `0 0 20px ${color}80`;
 
-                // Create label
-                const label = document.createElement('div');
-                label.style.backgroundColor = color;
-                label.style.color = '#000';
-                label.style.padding = '6px 12px';
-                label.style.borderRadius = '6px';
-                label.style.fontSize = '14px';
-                label.style.fontWeight = '700';
-                label.style.whiteSpace = 'nowrap';
-                label.style.boxShadow = '0 2px 10px rgba(0,0,0,0.4)';
-                label.style.zIndex = '1000';
+                overlayContainer.appendChild(box);
+
+                // Create label chip in bottom bar
+                const labelChip = document.createElement('div');
+                labelChip.className = 'label-chip';
+                labelChip.style.backgroundColor = color;
                 
                 const confidence = Math.round(prediction.score * 100);
-                label.innerHTML = `${prediction.class}<span style="font-size: 11px; opacity: 0.8; margin-left: 5px;">${confidence}%</span>`;
+                labelChip.innerHTML = `${prediction.class}<span class="confidence">${confidence}%</span>`;
 
-                // Smart label positioning
-                const labelWidth = 150; // Estimate
-                const labelHeight = 35;
-                const screenHeight = window.innerHeight;
-                const screenWidth = window.innerWidth;
-                const margin = 10;
-                const bottomMargin = 140; // Extra space for controls
-                
-                // Position label as fixed element to ensure it stays on screen
-                label.style.position = 'fixed';
-                
-                let labelLeft = boxLeft;
-                let labelTop = boxBottom + 5; // Default: below box
-                
-                // Check bottom boundary (with extra margin for controls)
-                if (labelTop + labelHeight > screenHeight - bottomMargin) {
-                    // Too close to bottom - put label ABOVE the box
-                    if (boxTop > labelHeight + 100) {
-                        labelTop = boxTop - labelHeight - 5;
-                    } else {
-                        // Put inside box at bottom
-                        labelTop = Math.min(boxBottom - labelHeight - 5, screenHeight - bottomMargin - labelHeight);
-                    }
-                }
-                
-                // Check top boundary (account for header)
-                if (labelTop < 90) {
-                    labelTop = Math.max(90, boxTop + 5);
-                }
-                
-                // Check left boundary
-                if (labelLeft < margin) {
-                    labelLeft = margin;
-                }
-                
-                // Check right boundary
-                if (labelLeft + labelWidth > screenWidth - margin) {
-                    labelLeft = Math.max(margin, screenWidth - labelWidth - margin);
-                }
-                
-                label.style.left = labelLeft + 'px';
-                label.style.top = labelTop + 'px';
-
-                overlayContainer.appendChild(box);
-                overlayContainer.appendChild(label);
+                labelsContainer.appendChild(labelChip);
             });
         }
 
-        // Clear detections
         function clearDetections() {
             overlayContainer.innerHTML = '';
+            labelsContainer.innerHTML = '';
         }
 
-        // Resize handler
-        window.addEventListener('resize', () => {
-            // Detections will update on next frame
-        });
-
-        // Start loading model when page loads
         loadModel();
     </script>
 </body>
