@@ -414,12 +414,48 @@
         let frameCount = 0;
         let detectionHistory = new Map();
         let lastDetectionTime = Date.now();
+        let nextColorIndex = 0;
 
         const colors = [
             '#4ade80', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6', '#10b981', 
             '#f43f5e', '#06b6d4', '#eab308', '#14b8a6', '#f97316', '#a855f7',
             '#84cc16', '#22d3ee', '#fb923c', '#c084fc', '#34d399', '#fbbf24'
         ];
+
+        // Calculate overlap between two bounding boxes (IoU - Intersection over Union)
+        function calculateIoU(box1, box2) {
+            const [x1, y1, w1, h1] = box1;
+            const [x2, y2, w2, h2] = box2;
+
+            // Calculate intersection
+            const xOverlap = Math.max(0, Math.min(x1 + w1, x2 + w2) - Math.max(x1, x2));
+            const yOverlap = Math.max(0, Math.min(y1 + h1, y2 + h2) - Math.max(y1, y2));
+            const intersectionArea = xOverlap * yOverlap;
+
+            // Calculate union
+            const box1Area = w1 * h1;
+            const box2Area = w2 * h2;
+            const unionArea = box1Area + box2Area - intersectionArea;
+
+            // Return IoU
+            return unionArea > 0 ? intersectionArea / unionArea : 0;
+        }
+
+        // Find if this detection overlaps with an existing one
+        function findOverlappingDetection(newPrediction) {
+            const overlapThreshold = 0.3; // 30% overlap threshold
+            
+            for (let [key, data] of detectionHistory.entries()) {
+                // Only check same class
+                if (data.prediction.class === newPrediction.class) {
+                    const iou = calculateIoU(data.prediction.bbox, newPrediction.bbox);
+                    if (iou > overlapThreshold) {
+                        return key;
+                    }
+                }
+            }
+            return null;
+        }
 
         // Load SUPER POWERFUL AI model
         async function loadModel() {
@@ -528,6 +564,7 @@
                 animationFrameId = null;
             }
             detectionHistory.clear();
+            nextColorIndex = 0;
             clearDetections();
         }
 
@@ -569,20 +606,56 @@
             // ULTRA SENSITIVE: Accept 10% confidence or higher!
             const minConfidence = 0.10; // 10% minimum - detects almost everything!
             
-            predictions.forEach(pred => {
-                if (pred.score >= minConfidence) {
-                    const key = `${pred.class}_${Math.round(pred.bbox[0])}_${Math.round(pred.bbox[1])}`;
-                    detectionHistory.set(key, {
+            // Filter predictions by confidence
+            const validPredictions = predictions.filter(pred => pred.score >= minConfidence);
+            
+            // Mark all existing detections as not updated
+            for (let [key, data] of detectionHistory.entries()) {
+                data.updated = false;
+            }
+            
+            // Process each new prediction
+            validPredictions.forEach(pred => {
+                // Check if this overlaps with an existing detection
+                const existingKey = findOverlappingDetection(pred);
+                
+                if (existingKey) {
+                    // Update existing detection with new data (keeps same color)
+                    const existingData = detectionHistory.get(existingKey);
+                    
+                    // Smooth the bounding box by averaging with previous position
+                    const oldBbox = existingData.prediction.bbox;
+                    const newBbox = pred.bbox;
+                    const smoothedBbox = [
+                        oldBbox[0] * 0.7 + newBbox[0] * 0.3,
+                        oldBbox[1] * 0.7 + newBbox[1] * 0.3,
+                        oldBbox[2] * 0.7 + newBbox[2] * 0.3,
+                        oldBbox[3] * 0.7 + newBbox[3] * 0.3
+                    ];
+                    
+                    detectionHistory.set(existingKey, {
+                        prediction: {
+                            ...pred,
+                            bbox: smoothedBbox
+                        },
+                        lastSeen: now,
+                        color: existingData.color,
+                        updated: true
+                    });
+                } else {
+                    // New detection - create new entry with unique key
+                    const uniqueKey = `${pred.class}_${now}_${Math.random().toString(36).substr(2, 9)}`;
+                    detectionHistory.set(uniqueKey, {
                         prediction: pred,
                         lastSeen: now,
-                        color: detectionHistory.has(key) ? 
-                            detectionHistory.get(key).color : 
-                            colors[detectionHistory.size % colors.length]
+                        color: colors[nextColorIndex % colors.length],
+                        updated: true
                     });
+                    nextColorIndex++;
                 }
             });
 
-            // Keep detections for 1 second (faster updates)
+            // Remove detections that weren't updated (disappeared)
             for (let [key, data] of detectionHistory.entries()) {
                 if (now - data.lastSeen > 1000) {
                     detectionHistory.delete(key);
