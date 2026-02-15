@@ -83,8 +83,7 @@
             border: 3px solid;
             border-radius: 8px;
             box-shadow: 0 0 20px rgba(74, 222, 128, 0.5);
-            animation: fadeIn 0.2s ease;
-            transition: all 0.15s ease;
+            transition: all 0.3s ease; /* Smooth, slow transitions */
         }
 
         @keyframes fadeIn {
@@ -145,7 +144,7 @@
             font-weight: 700;
             color: #000;
             box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-            animation: fadeIn 0.2s ease;
+            transition: all 0.3s ease; /* Smooth transitions only */
         }
 
         .label-chip .confidence {
@@ -366,6 +365,7 @@
                 <div class="feature-item">✨ Detects 80+ object types</div>
                 <div class="feature-item">⚡ Smart filtering (40%+ confidence)</div>
                 <div class="feature-item">🎯 Labels in fixed bar - always visible!</div>
+                <div class="feature-item">👁️ Smooth detection - no flicker or blinking</div>
                 <div class="feature-item">🔒 100% private - runs in browser</div>
                 <div class="feature-item">📱 Works on mobile & desktop</div>
             </div>
@@ -430,6 +430,8 @@
         let lastFrameTime = Date.now();
         let fps = 0;
         let frameCount = 0;
+        let detectionHistory = new Map(); // Keep track of detections over time
+        let lastDetectionTime = Date.now();
 
         const colors = [
             '#4ade80', '#3b82f6', '#f59e0b', '#ec4899', 
@@ -542,6 +544,7 @@
                 cancelAnimationFrame(animationFrameId);
                 animationFrameId = null;
             }
+            detectionHistory.clear(); // Clear detection history
             clearDetections();
         }
 
@@ -560,11 +563,16 @@
                     lastFrameTime = now;
                 }
 
-                const predictions = await model.detect(video, 20);
-                drawDetections(predictions);
-                
-                const highConfidenceCount = predictions.filter(p => p.score >= 0.4).length;
-                detectionCount.textContent = `${highConfidenceCount} object${highConfidenceCount !== 1 ? 's' : ''}`;
+                // Only run detection every 500ms (2 times per second) to prevent blinking
+                const timeSinceLastDetection = now - lastDetectionTime;
+                if (timeSinceLastDetection >= 500) {
+                    const predictions = await model.detect(video, 20);
+                    updateDetectionHistory(predictions);
+                    lastDetectionTime = now;
+                }
+
+                // Always draw from history (keeps detections stable)
+                drawDetectionsFromHistory();
 
             } catch (error) {
                 console.error('Detection error:', error);
@@ -573,7 +581,31 @@
             animationFrameId = requestAnimationFrame(detectFrame);
         }
 
-        function drawDetections(predictions) {
+        function updateDetectionHistory(predictions) {
+            const now = Date.now();
+            const minConfidence = 0.4;
+            
+            // Add new detections to history
+            predictions.forEach(pred => {
+                if (pred.score >= minConfidence) {
+                    const key = pred.class;
+                    detectionHistory.set(key, {
+                        prediction: pred,
+                        lastSeen: now,
+                        color: detectionHistory.has(key) ? detectionHistory.get(key).color : colors[detectionHistory.size % colors.length]
+                    });
+                }
+            });
+
+            // Remove old detections (not seen in last 2 seconds)
+            for (let [key, data] of detectionHistory.entries()) {
+                if (now - data.lastSeen > 2000) {
+                    detectionHistory.delete(key);
+                }
+            }
+        }
+
+        function drawDetectionsFromHistory() {
             overlayContainer.innerHTML = '';
             labelsContainer.innerHTML = '';
 
@@ -581,28 +613,11 @@
             const scaleX = videoRect.width / video.videoWidth;
             const scaleY = videoRect.height / video.videoHeight;
 
-            // Filter predictions
-            const filteredPredictions = [];
-            const minConfidence = 0.4;
-            
-            predictions.forEach(pred => {
-                if (pred.score >= minConfidence) {
-                    const isDuplicate = filteredPredictions.some(existing => {
-                        const [ex, ey] = existing.bbox;
-                        const [px, py] = pred.bbox;
-                        const distance = Math.sqrt(Math.pow(ex - px, 2) + Math.pow(ey - py, 2));
-                        return existing.class === pred.class && distance < 50;
-                    });
-                    
-                    if (!isDuplicate) {
-                        filteredPredictions.push(pred);
-                    }
-                }
-            });
-
-            filteredPredictions.forEach((prediction, index) => {
+            let count = 0;
+            for (let [objectClass, data] of detectionHistory.entries()) {
+                const prediction = data.prediction;
                 const [x, y, width, height] = prediction.bbox;
-                const color = colors[index % colors.length];
+                const color = data.color;
                 
                 // Draw box
                 const box = document.createElement('div');
@@ -613,19 +628,24 @@
                 box.style.height = (height * scaleY) + 'px';
                 box.style.borderColor = color;
                 box.style.boxShadow = `0 0 20px ${color}80`;
+                box.style.transition = 'all 0.3s ease'; // Smooth transitions
 
                 overlayContainer.appendChild(box);
 
-                // Create label chip in bottom bar
+                // Create label chip
                 const labelChip = document.createElement('div');
                 labelChip.className = 'label-chip';
                 labelChip.style.backgroundColor = color;
+                labelChip.style.transition = 'all 0.3s ease'; // Smooth transitions
                 
                 const confidence = Math.round(prediction.score * 100);
-                labelChip.innerHTML = `${prediction.class}<span class="confidence">${confidence}%</span>`;
+                labelChip.innerHTML = `${objectClass}<span class="confidence">${confidence}%</span>`;
 
                 labelsContainer.appendChild(labelChip);
-            });
+                count++;
+            }
+
+            detectionCount.textContent = `${count} object${count !== 1 ? 's' : ''}`;
         }
 
         function clearDetections() {
