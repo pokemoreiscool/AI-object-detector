@@ -102,6 +102,24 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.4);
             bottom: -35px;
             left: 0;
+            z-index: 10;
+        }
+
+        .detection-label.fixed-bottom {
+            position: fixed !important;
+            bottom: 10px !important;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
         }
 
         .confidence {
@@ -362,7 +380,8 @@
             <p>Real-time object detection powered by TensorFlow.js</p>
             <div class="feature-list">
                 <div class="feature-item">✨ Detects 80+ object types</div>
-                <div class="feature-item">⚡ Real-time processing</div>
+                <div class="feature-item">⚡ Smart filtering - only shows confident detections (40%+)</div>
+                <div class="feature-item">🎯 Labels stay on screen automatically</div>
                 <div class="feature-item">🔒 100% private - runs in browser</div>
                 <div class="feature-item">📱 Works on mobile & desktop</div>
             </div>
@@ -427,11 +446,14 @@
             '#eab308', '#14b8a6', '#f97316', '#a855f7'
         ];
 
-        // Load AI model
+        // Load AI model with optimized settings
         async function loadModel() {
             try {
                 console.log('Loading COCO-SSD model...');
-                model = await cocoSsd.load();
+                // Load with better model base for improved accuracy
+                model = await cocoSsd.load({
+                    base: 'lite_mobilenet_v2' // Faster and more accurate for real-time
+                });
                 console.log('Model loaded successfully!');
                 
                 loadingScreen.classList.add('hidden');
@@ -554,14 +576,15 @@
                     lastFrameTime = now;
                 }
 
-                // Detect objects
-                const predictions = await model.detect(video);
+                // Detect objects with higher max detections for better coverage
+                const predictions = await model.detect(video, 20);
                 
-                // Draw detections
+                // Draw detections (filtering happens inside drawDetections)
                 drawDetections(predictions);
                 
-                // Update count
-                detectionCount.textContent = `${predictions.length} object${predictions.length !== 1 ? 's' : ''}`;
+                // Count only high-confidence detections (>40%)
+                const highConfidenceCount = predictions.filter(p => p.score >= 0.4).length;
+                detectionCount.textContent = `${highConfidenceCount} object${highConfidenceCount !== 1 ? 's' : ''}`;
 
             } catch (error) {
                 console.error('Detection error:', error);
@@ -579,17 +602,44 @@
             const scaleX = videoRect.width / video.videoWidth;
             const scaleY = videoRect.height / video.videoHeight;
 
-            predictions.forEach((prediction, index) => {
+            // Filter predictions: only show high confidence (>40%) and remove duplicates
+            const filteredPredictions = [];
+            const minConfidence = 0.4; // 40% minimum confidence
+            
+            predictions.forEach(pred => {
+                if (pred.score >= minConfidence) {
+                    // Check for duplicates in same area
+                    const isDuplicate = filteredPredictions.some(existing => {
+                        const [ex, ey] = existing.bbox;
+                        const [px, py] = pred.bbox;
+                        const distance = Math.sqrt(Math.pow(ex - px, 2) + Math.pow(ey - py, 2));
+                        return existing.class === pred.class && distance < 50;
+                    });
+                    
+                    if (!isDuplicate) {
+                        filteredPredictions.push(pred);
+                    }
+                }
+            });
+
+            filteredPredictions.forEach((prediction, index) => {
                 const [x, y, width, height] = prediction.bbox;
                 const color = colors[index % colors.length];
+                
+                // Calculate scaled positions
+                const boxLeft = x * scaleX;
+                const boxTop = y * scaleY;
+                const boxWidth = width * scaleX;
+                const boxHeight = height * scaleY;
+                const boxBottom = boxTop + boxHeight;
                 
                 // Create box
                 const box = document.createElement('div');
                 box.className = 'detection-box';
-                box.style.left = (x * scaleX) + 'px';
-                box.style.top = (y * scaleY) + 'px';
-                box.style.width = (width * scaleX) + 'px';
-                box.style.height = (height * scaleY) + 'px';
+                box.style.left = boxLeft + 'px';
+                box.style.top = boxTop + 'px';
+                box.style.width = boxWidth + 'px';
+                box.style.height = boxHeight + 'px';
                 box.style.borderColor = color;
                 box.style.boxShadow = `0 0 20px ${color}80`;
 
@@ -600,6 +650,34 @@
                 
                 const confidence = Math.round(prediction.score * 100);
                 label.innerHTML = `${prediction.class}<span class="confidence">${confidence}%</span>`;
+
+                // Smart label positioning: keep labels on screen
+                const labelHeight = 30; // Approximate label height
+                const screenHeight = videoRect.height;
+                const screenWidth = videoRect.width;
+                
+                // Check if label would go off bottom of screen
+                if (boxBottom + labelHeight > screenHeight) {
+                    // Position label at bottom of screen instead
+                    label.style.position = 'fixed';
+                    label.style.bottom = '10px';
+                    label.style.left = Math.max(10, Math.min(boxLeft, screenWidth - 150)) + 'px';
+                    label.style.top = 'auto';
+                } else if (boxTop < 0) {
+                    // If box is off top, put label inside box at top
+                    label.style.bottom = 'auto';
+                    label.style.top = '5px';
+                } else {
+                    // Normal position below box
+                    label.style.bottom = '-35px';
+                    label.style.left = '0';
+                }
+                
+                // Check if label would go off right edge
+                if (boxLeft + 150 > screenWidth) {
+                    label.style.left = 'auto';
+                    label.style.right = '0';
+                }
 
                 box.appendChild(label);
                 overlayContainer.appendChild(box);
