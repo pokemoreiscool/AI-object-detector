@@ -92,34 +92,8 @@
         }
 
         .detection-label {
-            position: absolute;
-            color: #000;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: 700;
-            white-space: nowrap;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.4);
-            bottom: -35px;
-            left: 0;
-            z-index: 10;
-        }
-
-        .detection-label.fixed-bottom {
-            position: fixed !important;
-            bottom: 10px !important;
-            animation: slideUp 0.3s ease;
-        }
-
-        @keyframes slideUp {
-            from {
-                transform: translateY(20px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
+            /* Styling only - positioning handled by JavaScript */
+            animation: fadeIn 0.2s ease;
         }
 
         .confidence {
@@ -391,7 +365,7 @@
 
     <!-- Main Interface -->
     <div class="header">
-        <h1>AI Object Detector</h1>
+        <h1>🤖 AI Object Detector</h1>
         <div class="status" id="status">Loading...</div>
     </div>
 
@@ -632,6 +606,7 @@
                 const boxWidth = width * scaleX;
                 const boxHeight = height * scaleY;
                 const boxBottom = boxTop + boxHeight;
+                const boxRight = boxLeft + boxWidth;
                 
                 // Create box
                 const box = document.createElement('div');
@@ -645,42 +620,64 @@
 
                 // Create label
                 const label = document.createElement('div');
-                label.className = 'detection-label';
                 label.style.backgroundColor = color;
+                label.style.color = '#000';
+                label.style.padding = '6px 12px';
+                label.style.borderRadius = '6px';
+                label.style.fontSize = '14px';
+                label.style.fontWeight = '700';
+                label.style.whiteSpace = 'nowrap';
+                label.style.boxShadow = '0 2px 10px rgba(0,0,0,0.4)';
+                label.style.zIndex = '1000';
                 
                 const confidence = Math.round(prediction.score * 100);
-                label.innerHTML = `${prediction.class}<span class="confidence">${confidence}%</span>`;
+                label.innerHTML = `${prediction.class}<span style="font-size: 11px; opacity: 0.8; margin-left: 5px;">${confidence}%</span>`;
 
-                // Smart label positioning: keep labels on screen
-                const labelHeight = 30; // Approximate label height
-                const screenHeight = videoRect.height;
-                const screenWidth = videoRect.width;
+                // Smart label positioning
+                const labelWidth = 150; // Estimate
+                const labelHeight = 35;
+                const screenHeight = window.innerHeight;
+                const screenWidth = window.innerWidth;
+                const margin = 10;
+                const bottomMargin = 140; // Extra space for controls
                 
-                // Check if label would go off bottom of screen
-                if (boxBottom + labelHeight > screenHeight) {
-                    // Position label at bottom of screen instead
-                    label.style.position = 'fixed';
-                    label.style.bottom = '10px';
-                    label.style.left = Math.max(10, Math.min(boxLeft, screenWidth - 150)) + 'px';
-                    label.style.top = 'auto';
-                } else if (boxTop < 0) {
-                    // If box is off top, put label inside box at top
-                    label.style.bottom = 'auto';
-                    label.style.top = '5px';
-                } else {
-                    // Normal position below box
-                    label.style.bottom = '-35px';
-                    label.style.left = '0';
+                // Position label as fixed element to ensure it stays on screen
+                label.style.position = 'fixed';
+                
+                let labelLeft = boxLeft;
+                let labelTop = boxBottom + 5; // Default: below box
+                
+                // Check bottom boundary (with extra margin for controls)
+                if (labelTop + labelHeight > screenHeight - bottomMargin) {
+                    // Too close to bottom - put label ABOVE the box
+                    if (boxTop > labelHeight + 100) {
+                        labelTop = boxTop - labelHeight - 5;
+                    } else {
+                        // Put inside box at bottom
+                        labelTop = Math.min(boxBottom - labelHeight - 5, screenHeight - bottomMargin - labelHeight);
+                    }
                 }
                 
-                // Check if label would go off right edge
-                if (boxLeft + 150 > screenWidth) {
-                    label.style.left = 'auto';
-                    label.style.right = '0';
+                // Check top boundary (account for header)
+                if (labelTop < 90) {
+                    labelTop = Math.max(90, boxTop + 5);
                 }
+                
+                // Check left boundary
+                if (labelLeft < margin) {
+                    labelLeft = margin;
+                }
+                
+                // Check right boundary
+                if (labelLeft + labelWidth > screenWidth - margin) {
+                    labelLeft = Math.max(margin, screenWidth - labelWidth - margin);
+                }
+                
+                label.style.left = labelLeft + 'px';
+                label.style.top = labelTop + 'px';
 
-                box.appendChild(label);
                 overlayContainer.appendChild(box);
+                overlayContainer.appendChild(label);
             });
         }
 
