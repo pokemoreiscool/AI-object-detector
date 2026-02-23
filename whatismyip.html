@@ -29,87 +29,25 @@
       text-align: center;
       box-shadow: 0 8px 32px rgba(0,0,0,0.4);
     }
-    h1 {
-      font-size: 22px;
-      font-weight: 600;
-      margin-bottom: 24px;
-      color: #a0cfff;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-    }
+    h1 { font-size: 22px; font-weight: 600; margin-bottom: 24px; color: #a0cfff; letter-spacing: 1px; text-transform: uppercase; }
     .ip-display {
-      font-size: 34px;
-      font-weight: 700;
-      color: #fff;
-      background: rgba(255,255,255,0.1);
-      border-radius: 12px;
-      padding: 14px;
-      margin-bottom: 22px;
-      letter-spacing: 1px;
-      word-break: break-all;
+      font-size: 34px; font-weight: 700; color: #fff;
+      background: rgba(255,255,255,0.1); border-radius: 12px;
+      padding: 14px; margin-bottom: 22px; letter-spacing: 1px; word-break: break-all;
     }
-    .info-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      text-align: left;
-      margin-bottom: 22px;
-    }
-    .info-item {
-      background: rgba(255,255,255,0.08);
-      border-radius: 10px;
-      padding: 11px 14px;
-    }
-    .info-label {
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: #a0cfff;
-      margin-bottom: 3px;
-    }
-    .info-value {
-      font-size: 14px;
-      font-weight: 500;
-      color: #fff;
-    }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; text-align: left; margin-bottom: 22px; }
+    .info-item { background: rgba(255,255,255,0.08); border-radius: 10px; padding: 11px 14px; }
+    .info-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #a0cfff; margin-bottom: 3px; }
+    .info-value { font-size: 14px; font-weight: 500; color: #fff; }
     .loading { color: #a0cfff; font-style: italic; }
     .error { color: #ff6b6b; font-size: 15px; }
-    #map {
-      width: 100%;
-      height: 260px;
-      border-radius: 12px;
-      border: 1px solid rgba(255,255,255,0.15);
-      margin-bottom: 16px;
-      display: none;
-    }
+    #map { width: 100%; height: 260px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.15); margin-bottom: 16px; display: none; }
     .btn-row { display: flex; gap: 10px; justify-content: center; }
-    .refresh-btn {
-      background: #1a73e8;
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      padding: 10px 28px;
-      font-size: 14px;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
+    .refresh-btn { background: #1a73e8; color: #fff; border: none; border-radius: 8px; padding: 10px 28px; font-size: 14px; cursor: pointer; }
     .refresh-btn:hover { background: #1557b0; }
-    .copy-btn {
-      background: rgba(255,255,255,0.1);
-      color: #fff;
-      border: 1px solid rgba(255,255,255,0.2);
-      border-radius: 8px;
-      padding: 10px 18px;
-      font-size: 14px;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
+    .copy-btn { background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; padding: 10px 18px; font-size: 14px; cursor: pointer; }
     .copy-btn:hover { background: rgba(255,255,255,0.2); }
-    .note {
-      margin-top: 14px;
-      font-size: 11px;
-      color: rgba(255,255,255,0.4);
-    }
+    .note { margin-top: 14px; font-size: 11px; color: rgba(255,255,255,0.4); }
   </style>
 </head>
 <body>
@@ -117,61 +55,36 @@
     <h1>🌐 What's My IP?</h1>
     <div class="ip-display" id="ip"><span class="loading">Loading...</span></div>
     <div class="info-grid">
-      <div class="info-item">
-        <div class="info-label">City</div>
-        <div class="info-value" id="city">—</div>
-      </div>
-      <div class="info-item">
-        <div class="info-label">Region</div>
-        <div class="info-value" id="region">—</div>
-      </div>
-      <div class="info-item">
-        <div class="info-label">Country</div>
-        <div class="info-value" id="country">—</div>
-      </div>
-      <div class="info-item">
-        <div class="info-label">Timezone</div>
-        <div class="info-value" id="timezone">—</div>
-      </div>
-      <div class="info-item">
-        <div class="info-label">ISP</div>
-        <div class="info-value" id="isp">—</div>
-      </div>
-      <div class="info-item">
-        <div class="info-label">Coordinates</div>
-        <div class="info-value" id="coords">—</div>
-      </div>
+      <div class="info-item"><div class="info-label">City</div><div class="info-value" id="city">—</div></div>
+      <div class="info-item"><div class="info-label">Region</div><div class="info-value" id="region">—</div></div>
+      <div class="info-item"><div class="info-label">Country</div><div class="info-value" id="country">—</div></div>
+      <div class="info-item"><div class="info-label">Timezone</div><div class="info-value" id="timezone">—</div></div>
+      <div class="info-item"><div class="info-label">ISP / Org</div><div class="info-value" id="isp">—</div></div>
+      <div class="info-item"><div class="info-label">Coordinates</div><div class="info-value" id="coords">—</div></div>
     </div>
-
     <div id="map"></div>
-
     <div class="btn-row">
       <button class="refresh-btn" onclick="fetchIP()">🔄 Refresh</button>
       <button class="copy-btn" onclick="copyIP()">📋 Copy IP</button>
     </div>
-    <div class="note">Location is approximate — based on IP, not GPS. Powered by ipwho.is</div>
+    <div class="note">Location is approximate — based on IP, not GPS.</div>
   </div>
 
   <script>
-    let map = null;
-    let marker = null;
-    let circle = null;
-    let currentIP = '';
+    let map = null, marker = null, circle = null, currentIP = '';
 
     function copyIP() {
-      if (currentIP) {
-        navigator.clipboard.writeText(currentIP).then(() => {
-          const btn = document.querySelector('.copy-btn');
-          btn.textContent = '✅ Copied!';
-          setTimeout(() => btn.textContent = '📋 Copy IP', 2000);
-        });
-      }
+      if (!currentIP) return;
+      navigator.clipboard.writeText(currentIP).then(() => {
+        const btn = document.querySelector('.copy-btn');
+        btn.textContent = '✅ Copied!';
+        setTimeout(() => btn.textContent = '📋 Copy IP', 2000);
+      });
     }
 
     function initMap(lat, lon) {
       const mapEl = document.getElementById('map');
       mapEl.style.display = 'block';
-
       if (!map) {
         map = L.map('map').setView([lat, lon], 11);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -182,53 +95,57 @@
         if (marker) map.removeLayer(marker);
         if (circle) map.removeLayer(circle);
       }
+      marker = L.marker([lat, lon]).addTo(map).bindPopup('📍 Your approximate location').openPopup();
+      circle = L.circle([lat, lon], { color: '#1a73e8', fillColor: '#1a73e8', fillOpacity: 0.12, radius: 5000 }).addTo(map);
+    }
 
-      marker = L.marker([lat, lon]).addTo(map)
-        .bindPopup('📍 Your approximate location').openPopup();
+    function setFields(ip, city, region, country, timezone, isp, lat, lon) {
+      currentIP = ip;
+      document.getElementById('ip').textContent = ip;
+      document.getElementById('city').textContent = city || 'Unknown';
+      document.getElementById('region').textContent = region || 'Unknown';
+      document.getElementById('country').textContent = country || 'Unknown';
+      document.getElementById('timezone').textContent = timezone || 'Unknown';
+      document.getElementById('isp').textContent = isp || 'Unknown';
+      if (lat && lon) {
+        document.getElementById('coords').textContent = `${lat}, ${lon}`;
+        initMap(parseFloat(lat), parseFloat(lon));
+      }
+    }
 
-      circle = L.circle([lat, lon], {
-        color: '#1a73e8',
-        fillColor: '#1a73e8',
-        fillOpacity: 0.12,
-        radius: 5000
-      }).addTo(map);
+    async function tryIpinfo() {
+      const res = await fetch('https://ipinfo.io/json');
+      const d = await res.json();
+      if (!d.ip) throw new Error('No IP');
+      const [lat, lon] = (d.loc || ',').split(',');
+      setFields(d.ip, d.city, d.region, d.country, d.timezone, d.org, lat, lon);
+    }
+
+    async function tryFreeIpApi() {
+      const res = await fetch('https://freeipapi.com/api/json');
+      const d = await res.json();
+      if (!d.ipAddress) throw new Error('No IP');
+      setFields(d.ipAddress, d.cityName, d.regionName, d.countryName, d.timeZone, null, d.latitude, d.longitude);
     }
 
     async function fetchIP() {
       document.getElementById('ip').innerHTML = '<span class="loading">Loading...</span>';
-      ['city','region','country','timezone','isp','coords'].forEach(id => {
-        document.getElementById(id).textContent = '—';
-      });
+      ['city','region','country','timezone','isp','coords'].forEach(id => document.getElementById(id).textContent = '—');
 
       try {
-        // ipwho.is supports HTTPS and has a generous free tier
-        const res = await fetch('https://ipwho.is/');
-        const data = await res.json();
-
-        if (!data.success) throw new Error(data.message || 'API error');
-
-        currentIP = data.ip;
-        document.getElementById('ip').textContent = data.ip;
-        document.getElementById('city').textContent = data.city || 'Unknown';
-        document.getElementById('region').textContent = data.region || 'Unknown';
-        document.getElementById('country').textContent = `${data.country || 'Unknown'}${data.country_code ? ' (' + data.country_code + ')' : ''}`;
-        document.getElementById('timezone').textContent = data.timezone?.id || 'Unknown';
-        document.getElementById('isp').textContent = data.connection?.isp || 'Unknown';
-
-        if (data.latitude && data.longitude) {
-          document.getElementById('coords').textContent = `${data.latitude}, ${data.longitude}`;
-          initMap(data.latitude, data.longitude);
-        } else {
-          document.getElementById('coords').textContent = 'Unknown';
+        await tryIpinfo();
+      } catch (e1) {
+        try {
+          await tryFreeIpApi();
+        } catch (e2) {
+          document.getElementById('ip').innerHTML = '<span class="error">❌ Failed to load — try refreshing</span>';
+          console.error('Both APIs failed', e1, e2);
         }
-      } catch (e) {
-        document.getElementById('ip').innerHTML = '<span class="error">❌ Failed to load — try refreshing</span>';
-        console.error(e);
       }
     }
 
     fetchIP();
   </script>
+  ver:3.5
 </body>
 </html>
-ver:3.0
