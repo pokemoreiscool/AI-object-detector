@@ -73,8 +73,7 @@
       color: #fff;
     }
     .loading { color: #a0cfff; font-style: italic; }
-    .error { color: #ff6b6b; }
-
+    .error { color: #ff6b6b; font-size: 16px; }
     #map {
       width: 100%;
       height: 260px;
@@ -83,7 +82,7 @@
       margin-bottom: 16px;
       display: none;
     }
-
+    .btn-row { display: flex; gap: 10px; justify-content: center; }
     .refresh-btn {
       background: #1a73e8;
       color: #fff;
@@ -95,6 +94,17 @@
       transition: background 0.2s;
     }
     .refresh-btn:hover { background: #1557b0; }
+    .copy-btn {
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 8px;
+      padding: 10px 18px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .copy-btn:hover { background: rgba(255,255,255,0.2); }
     .note {
       margin-top: 14px;
       font-size: 11px;
@@ -135,14 +145,28 @@
 
     <div id="map"></div>
 
-    <button class="refresh-btn" onclick="fetchIP()">🔄 Refresh</button>
-    <div class="note">Location is approximate — based on IP, not GPS.</div>
+    <div class="btn-row">
+      <button class="refresh-btn" onclick="fetchIP()">🔄 Refresh</button>
+      <button class="copy-btn" onclick="copyIP()">📋 Copy IP</button>
+    </div>
+    <div class="note">Location is approximate — based on IP, not GPS. Powered by ip-api.com</div>
   </div>
 
   <script>
     let map = null;
     let marker = null;
     let circle = null;
+    let currentIP = '';
+
+    function copyIP() {
+      if (currentIP) {
+        navigator.clipboard.writeText(currentIP).then(() => {
+          const btn = document.querySelector('.copy-btn');
+          btn.textContent = '✅ Copied!';
+          setTimeout(() => btn.textContent = '📋 Copy IP', 2000);
+        });
+      }
+    }
 
     function initMap(lat, lon) {
       const mapEl = document.getElementById('map');
@@ -177,24 +201,29 @@
       });
 
       try {
-        const res = await fetch('https://ipapi.co/json/');
+        // ip-api.com has a generous free tier (45 req/min)
+        const res = await fetch('http://ip-api.com/json/?fields=status,message,country,countryCode,regionName,city,zip,lat,lon,timezone,isp,query');
         const data = await res.json();
 
-        document.getElementById('ip').textContent = data.ip || 'Unknown';
-        document.getElementById('city').textContent = data.city || 'Unknown';
-        document.getElementById('region').textContent = data.region || 'Unknown';
-        document.getElementById('country').textContent = `${data.country_name || 'Unknown'}${data.country_code ? ' (' + data.country_code + ')' : ''}`;
-        document.getElementById('timezone').textContent = data.timezone || 'Unknown';
-        document.getElementById('isp').textContent = data.org || 'Unknown';
+        if (data.status !== 'success') throw new Error(data.message || 'API error');
 
-        if (data.latitude && data.longitude) {
-          document.getElementById('coords').textContent = `${data.latitude}, ${data.longitude}`;
-          initMap(data.latitude, data.longitude);
+        currentIP = data.query;
+        document.getElementById('ip').textContent = data.query;
+        document.getElementById('city').textContent = data.city || 'Unknown';
+        document.getElementById('region').textContent = data.regionName || 'Unknown';
+        document.getElementById('country').textContent = `${data.country || 'Unknown'}${data.countryCode ? ' (' + data.countryCode + ')' : ''}`;
+        document.getElementById('timezone').textContent = data.timezone || 'Unknown';
+        document.getElementById('isp').textContent = data.isp || 'Unknown';
+
+        if (data.lat && data.lon) {
+          document.getElementById('coords').textContent = `${data.lat}, ${data.lon}`;
+          initMap(data.lat, data.lon);
         } else {
           document.getElementById('coords').textContent = 'Unknown';
         }
       } catch (e) {
-        document.getElementById('ip').innerHTML = '<span class="error">Failed to load</span>';
+        document.getElementById('ip').innerHTML = '<span class="error">❌ Failed to load — try refreshing</span>';
+        console.error(e);
       }
     }
 
