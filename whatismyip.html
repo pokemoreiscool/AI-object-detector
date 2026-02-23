@@ -73,7 +73,7 @@
       color: #fff;
     }
     .loading { color: #a0cfff; font-style: italic; }
-    .error { color: #ff6b6b; font-size: 16px; }
+    .error { color: #ff6b6b; font-size: 15px; }
     #map {
       width: 100%;
       height: 260px;
@@ -149,7 +149,7 @@
       <button class="refresh-btn" onclick="fetchIP()">🔄 Refresh</button>
       <button class="copy-btn" onclick="copyIP()">📋 Copy IP</button>
     </div>
-    <div class="note">Location is approximate — based on IP, not GPS. Powered by ip-api.com</div>
+    <div class="note">Location is approximate — based on IP, not GPS. Powered by ipwho.is</div>
   </div>
 
   <script>
@@ -201,23 +201,23 @@
       });
 
       try {
-        // ip-api.com has a generous free tier (45 req/min)
-        const res = await fetch('http://ip-api.com/json/?fields=status,message,country,countryCode,regionName,city,zip,lat,lon,timezone,isp,query');
+        // ipwho.is supports HTTPS and has a generous free tier
+        const res = await fetch('https://ipwho.is/');
         const data = await res.json();
 
-        if (data.status !== 'success') throw new Error(data.message || 'API error');
+        if (!data.success) throw new Error(data.message || 'API error');
 
-        currentIP = data.query;
-        document.getElementById('ip').textContent = data.query;
+        currentIP = data.ip;
+        document.getElementById('ip').textContent = data.ip;
         document.getElementById('city').textContent = data.city || 'Unknown';
-        document.getElementById('region').textContent = data.regionName || 'Unknown';
-        document.getElementById('country').textContent = `${data.country || 'Unknown'}${data.countryCode ? ' (' + data.countryCode + ')' : ''}`;
-        document.getElementById('timezone').textContent = data.timezone || 'Unknown';
-        document.getElementById('isp').textContent = data.isp || 'Unknown';
+        document.getElementById('region').textContent = data.region || 'Unknown';
+        document.getElementById('country').textContent = `${data.country || 'Unknown'}${data.country_code ? ' (' + data.country_code + ')' : ''}`;
+        document.getElementById('timezone').textContent = data.timezone?.id || 'Unknown';
+        document.getElementById('isp').textContent = data.connection?.isp || 'Unknown';
 
-        if (data.lat && data.lon) {
-          document.getElementById('coords').textContent = `${data.lat}, ${data.lon}`;
-          initMap(data.lat, data.lon);
+        if (data.latitude && data.longitude) {
+          document.getElementById('coords').textContent = `${data.latitude}, ${data.longitude}`;
+          initMap(data.latitude, data.longitude);
         } else {
           document.getElementById('coords').textContent = 'Unknown';
         }
