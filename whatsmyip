@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>What's My IP?</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      padding: 20px;
+    }
+    .card {
+      background: rgba(255,255,255,0.07);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 20px;
+      padding: 36px 40px;
+      width: 480px;
+      max-width: 95vw;
+      text-align: center;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+    h1 {
+      font-size: 22px;
+      font-weight: 600;
+      margin-bottom: 24px;
+      color: #a0cfff;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .ip-display {
+      font-size: 34px;
+      font-weight: 700;
+      color: #fff;
+      background: rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 22px;
+      letter-spacing: 1px;
+      word-break: break-all;
+    }
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      text-align: left;
+      margin-bottom: 22px;
+    }
+    .info-item {
+      background: rgba(255,255,255,0.08);
+      border-radius: 10px;
+      padding: 11px 14px;
+    }
+    .info-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #a0cfff;
+      margin-bottom: 3px;
+    }
+    .info-value {
+      font-size: 14px;
+      font-weight: 500;
+      color: #fff;
+    }
+    .loading { color: #a0cfff; font-style: italic; }
+    .error { color: #ff6b6b; }
+
+    #map {
+      width: 100%;
+      height: 260px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.15);
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    .refresh-btn {
+      background: #1a73e8;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 28px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .refresh-btn:hover { background: #1557b0; }
+    .note {
+      margin-top: 14px;
+      font-size: 11px;
+      color: rgba(255,255,255,0.4);
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🌐 What's My IP?</h1>
+    <div class="ip-display" id="ip"><span class="loading">Loading...</span></div>
+    <div class="info-grid">
+      <div class="info-item">
+        <div class="info-label">City</div>
+        <div class="info-value" id="city">—</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Region</div>
+        <div class="info-value" id="region">—</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Country</div>
+        <div class="info-value" id="country">—</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Timezone</div>
+        <div class="info-value" id="timezone">—</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">ISP</div>
+        <div class="info-value" id="isp">—</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Coordinates</div>
+        <div class="info-value" id="coords">—</div>
+      </div>
+    </div>
+
+    <div id="map"></div>
+
+    <button class="refresh-btn" onclick="fetchIP()">🔄 Refresh</button>
+    <div class="note">Location is approximate — based on IP, not GPS.</div>
+  </div>
+
+  <script>
+    let map = null;
+    let marker = null;
+    let circle = null;
+
+    function initMap(lat, lon) {
+      const mapEl = document.getElementById('map');
+      mapEl.style.display = 'block';
+
+      if (!map) {
+        map = L.map('map').setView([lat, lon], 11);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+      } else {
+        map.setView([lat, lon], 11);
+        if (marker) map.removeLayer(marker);
+        if (circle) map.removeLayer(circle);
+      }
+
+      marker = L.marker([lat, lon]).addTo(map)
+        .bindPopup('📍 Your approximate location').openPopup();
+
+      circle = L.circle([lat, lon], {
+        color: '#1a73e8',
+        fillColor: '#1a73e8',
+        fillOpacity: 0.12,
+        radius: 5000
+      }).addTo(map);
+    }
+
+    async function fetchIP() {
+      document.getElementById('ip').innerHTML = '<span class="loading">Loading...</span>';
+      ['city','region','country','timezone','isp','coords'].forEach(id => {
+        document.getElementById(id).textContent = '—';
+      });
+
+      try {
+        const res = await fetch('https://ipapi.co/json/');
+        const data = await res.json();
+
+        document.getElementById('ip').textContent = data.ip || 'Unknown';
+        document.getElementById('city').textContent = data.city || 'Unknown';
+        document.getElementById('region').textContent = data.region || 'Unknown';
+        document.getElementById('country').textContent = `${data.country_name || 'Unknown'}${data.country_code ? ' (' + data.country_code + ')' : ''}`;
+        document.getElementById('timezone').textContent = data.timezone || 'Unknown';
+        document.getElementById('isp').textContent = data.org || 'Unknown';
+
+        if (data.latitude && data.longitude) {
+          document.getElementById('coords').textContent = `${data.latitude}, ${data.longitude}`;
+          initMap(data.latitude, data.longitude);
+        } else {
+          document.getElementById('coords').textContent = 'Unknown';
+        }
+      } catch (e) {
+        document.getElementById('ip').innerHTML = '<span class="error">Failed to load</span>';
+      }
+    }
+
+    fetchIP();
+  </script>
+</body>
+</html>
