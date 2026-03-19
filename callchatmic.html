@@ -328,10 +328,16 @@ async function doJoin(name, stream){
   const [_sendName, getName] = room.makeAction('name')
   sendName = _sendName
 
-  /* ── Someone joined: send them our name, they'll call us ── */
+  /* ── MUST be registered before addStream ── */
+  room.onPeerStream((stream, peerId) => {
+    attachAudio(peerId, stream)
+  })
+
+  /* ── Someone joined: push our stream + name to them explicitly ── */
   room.onPeerJoin(peerId => {
     if(!peers[peerId]) peers[peerId] = { name: '…' }
-    sendName(myName, peerId)   // tell them who we are
+    sendName(myName, peerId)         // send our name directly to them
+    room.addStream(myStream, peerId) // push our audio directly to them
     updateGrid()
   })
 
@@ -351,19 +357,12 @@ async function doJoin(name, stream){
     if(isNew) toast(`${name} joined`)
   })
 
-  /* ── Receive audio stream from peer ── */
-  room.onPeerStream((stream, peerId) => {
-    attachAudio(peerId, stream)
-  })
-
-  /* ── Broadcast our mic to everyone ── */
-  room.addStream(myStream)
-
-  /* ── Add ourselves ── */
+  /* ── Add ourselves locally ── */
   peers['__me__'] = { name: myName, isMe: true }
   startVol('__me__', myStream)
 
-  /* ── Send our name to whoever is already in the room ── */
+  /* ── Broadcast our stream + name to anyone already in the room ── */
+  room.addStream(myStream)
   sendName(myName)
 
   hideOv()
