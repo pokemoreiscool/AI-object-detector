@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sonic Call — Pokemore Team</title>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+  <style>
+    /* ═══════════════════════════════════════
+       TOKENS
+    ═══════════════════════════════════════ */
+    :root {
+      --bg:      #070a0f;
+      --bg2:     #0c1018;
+      --panel:   #0f1520;
+      --panel2:  #141c28;
+      --border:  #1e2d42;
+      --border2: #243348;
+
+      --neon:    #00f0a0;   /* sonic green */
+      --neon2:   #ffe566;   /* pokemon yellow */
+      --neon3:   #ff6b6b;   /* danger red */
+      --blue:    #4fc3f7;
+      --purple:  #b39dff;
+
+      --tx:      #d4eaf7;
+      --tx2:     #5c7a9a;
+      --tx3:     #8fa8c0;
+
+      --rad:     12px;
+      --rad-lg:  18px;
+    }
+
+    /* ═══════════════════════════════════════
+       RESET & BASE
+    ═══════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      font-family: 'Rajdhani', sans-serif;
+      background: var(--bg);
+      color: var(--tx);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+      gap: 14px;
+      overflow-x: hidden;
+    }
+
+    /* animated grid bg */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(0,240,160,.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,240,160,.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+    body::after {
+      content: '';
+      position: fixed; inset: 0;
+      background:
+        radial-gradient(ellipse 55% 40% at 10% 10%, rgba(0,240,160,.07) 0%, transparent 55%),
+        radial-gradient(ellipse 45% 35% at 90% 90%, rgba(255,229,102,.06) 0%, transparent 55%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* scan-line grain */
+    body .grain {
+      position: fixed; inset: 0; z-index: 1; pointer-events: none;
+      background-image: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,.06) 2px,
+        rgba(0,0,0,.06) 4px
+      );
+    }
+
+    /* ═══════════════════════════════════════
+       SCREENS
+    ═══════════════════════════════════════ */
+    .scr { display: none; width: 100%; max-width: 460px; position: relative; z-index: 2; }
+    .scr.on { display: block; animation: fadeUp .35s cubic-bezier(.16,1,.3,1); }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+
+    /* ═══════════════════════════════════════
+       FILE:// BLOCKER
+    ═══════════════════════════════════════ */
+    #blocker {
+      position: fixed; inset: 0; background: var(--bg);
+      z-index: 9999; display: none; align-items: center;
+      justify-content: center; padding: 24px;
+    }
+    #blocker.on { display: flex; }
+    .blk {
+      max-width: 460px; width: 100%;
+      background: var(--panel);
+      border: 1px solid rgba(255,229,102,.25);
+      border-radius: var(--rad-lg); padding: 28px;
+    }
+    .blk h2 { font-family: 'Orbitron', sans-serif; font-size: 1rem; color: var(--neon2); margin-bottom: 12px; letter-spacing: .05em; }
+    .blk p { font-family: 'Share Tech Mono', monospace; font-size: .72rem; color: var(--tx2); line-height: 1.8; margin-bottom: 10px; }
+    .blk code { display: block; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-family: 'Share Tech Mono', monospace; font-size: .72rem; color: var(--neon); margin: 6px 0; }
+
+    /* ═══════════════════════════════════════
+       LOGO
+    ═══════════════════════════════════════ */
+    .logo { text-align: center; margin-bottom: 28px; }
+
+    .logo-badge {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: var(--panel); border: 1px solid var(--border2);
+      border-radius: 100px; padding: 8px 20px 8px 14px;
+      margin-bottom: 16px;
+      position: relative; overflow: hidden;
+    }
+    .logo-badge::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(90deg, rgba(0,240,160,.07), transparent);
+    }
+    .logo-icon {
+      font-size: 1.6rem;
+      filter: drop-shadow(0 0 8px rgba(0,240,160,.6));
+      animation: iconFloat 3s ease-in-out infinite;
+    }
+    @keyframes iconFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
+    .logo-tag {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: .65rem;
+      color: var(--neon);
+      letter-spacing: .1em;
+    }
+
+    .logo h1 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 2.4rem;
+      font-weight: 900;
+      letter-spacing: .04em;
+      line-height: 1;
+      background: linear-gradient(135deg, var(--neon) 0%, var(--neon2) 60%, #ffaa44 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      filter: drop-shadow(0 0 20px rgba(0,240,160,.25));
+    }
+    .logo-sub {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: .65rem;
+      color: var(--tx2);
+      margin-top: 8px;
+      letter-spacing: .1em;
+    }
+    .logo-sub span { color: var(--neon); }
+
+    /* ═══════════════════════════════════════
+       CARDS
+    ═══════════════════════════════════════ */
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border2);
+      border-radius: var(--rad-lg);
+      padding: 22px;
+      margin-bottom: 12px;
+      position: relative;
+      overflow: hidden;
+    }
+    .card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(0,240,160,.3), transparent);
+    }
+
+    .card-lbl {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: .6rem;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      color: var(--neon);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card-lbl::before {
+      content: '▶';
+      font-size: .5rem;
+      opacity: .7;
+    }
+
+    /* welcome card */
+    .wcard { background: var(--panel); border: 1px solid var(--border2); border-radius: var(--rad-lg); padding: 22px; margin-bottom: 12px; display: none; position: relative; overflow: hidden; }
+    .wcard::before { content:''; position:absolute; top:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,rgba(0,240,160,.3),transparent); }
+    .wcard.on { display: block; }
+    .wc-row { display: flex; align-items: center; gap: 16px; margin-bottom: 18px; }
+    .wc-av {
+      width: 56px; height: 56px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.4rem; font-weight: 900; flex-shrink: 0;
+      position: relative;
+    }
+    .wc-av::after {
+      content: '';
+      position: absolute; inset: -3px;
+      border-radius: 50%;
+      border: 2px solid rgba(0,240,160,.4);
+      animation: avRing 3s linear infinite;
+    }
+    @keyframes avRing { to { transform: rotate(360deg); } }
+    .wc-hey { font-family: 'Share Tech Mono', monospace; font-size: .6rem; color: var(--tx2); margin-bottom: 3px; letter-spacing: .08em; }
+    .wc-nm { font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 700; color: var(--tx); letter-spacing: .03em; }
+    .wc-sw { font-family: 'Share Tech Mono', monospace; font-size: .6rem; color: var(--tx2); cursor: pointer; margin-top: 4px; display: inline-block; }
+    .wc-sw:hover { color: var(--neon); }
+
+    .scard { display: none; } .scard.on { display: block; }
+
+    /* ═══════════════════════════════════════
+       INPUTS
+    ═══════════════════════════════════════ */
+    input[type=text] {
+      width: 100%;
+      background: var(--bg2);
+      border: 1px solid var(--border2);
+      border-radius: var(--rad);
+      padding: 14px 16px;
+      color: var(--tx);
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 1rem;
+      font-weight: 500;
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+      margin-bottom: 12px;
+      letter-spacing: .03em;
+    }
+    input[type=text]:focus {
+      border-color: var(--neon);
+      box-shadow: 0 0 0 3px rgba(0,240,160,.1), 0 0 16px rgba(0,240,160,.06);
+    }
+    input[type=text]::placeholder { color: var(--tx2); }
+
+    /* ═══════════════════════════════════════
+       BUTTONS
+    ═══════════════════════════════════════ */
+    button { cursor: pointer; font-family: 'Rajdhani', sans-serif; font-weight: 700; border: none; border-radius: var(--rad); transition: all .2s; letter-spacing: .05em; }
+
+    .bp {
+      width: 100%; padding: 15px; font-size: 1rem;
+      color: #050e12;
+      background: linear-gradient(135deg, var(--neon) 0%, #00c87a 100%);
+      position: relative; overflow: hidden;
+      text-transform: uppercase;
+    }
+    .bp::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,.15), transparent);
+      opacity: 0; transition: opacity .2s;
+    }
+    .bp:hover:not(:disabled)::after { opacity: 1; }
+    .bp:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 28px rgba(0,240,160,.3), 0 0 0 1px rgba(0,240,160,.4); }
+    .bp:active:not(:disabled) { transform: translateY(0); }
+    .bp:disabled { opacity: .3; cursor: not-allowed; }
+
+    .brt {
+      width: 100%; padding: 12px; font-size: .85rem;
+      color: var(--neon2);
+      background: rgba(255,229,102,.06);
+      border: 1px solid rgba(255,229,102,.2);
+      border-radius: var(--rad); margin-top: 10px;
+      text-transform: uppercase;
+    }
+    .brt:hover { background: rgba(255,229,102,.1); border-color: rgba(255,229,102,.4); }
+
+    /* ═══════════════════════════════════════
+       NET STATUS
+    ═══════════════════════════════════════ */
+    .nets {
+      display: flex; align-items: center; gap: 8px;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: .65rem; color: var(--tx2);
+      margin-top: 10px;
+    }
+    .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      flex-shrink: 0; background: var(--tx2);
+    }
+    .dot.sp { background: var(--neon2); animation: blink 1s infinite; }
+    .dot.ok { background: var(--neon); box-shadow: 0 0 6px var(--neon); }
+    .dot.er { background: var(--neon3); box-shadow: 0 0 6px var(--neon3); }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
+
+    /* ═══════════════════════════════════════
+       ERROR BOX
+    ═══════════════════════════════════════ */
+    .eb {
+      background: rgba(255,107,107,.07); border: 1px solid rgba(255,107,107,.2);
+      border-radius: var(--rad); padding: 12px 14px; margin-top: 12px;
+      font-family: 'Share Tech Mono', monospace; font-size: .68rem;
+      color: var(--neon3); line-height: 1.65; display: none; white-space: pre-line;
+    }
+    .eb.on { display: block; }
+    .eb strong { display: block; margin-bottom: 3px; font-size: .72rem; letter-spacing: .05em; }
+
+    /* ═══════════════════════════════════════
+       ROOM SCREEN
+    ═══════════════════════════════════════ */
+    #rs { max-width: 640px; }
+
+    .room-topbar {
+      display: flex; align-items: flex-start;
+      justify-content: space-between; gap: 14px;
+      margin-bottom: 22px;
+    }
+
+    .room-title-group {}
+
+    .room-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.1rem; font-weight: 700;
+      letter-spacing: .06em; color: var(--tx);
+      line-height: 1.2;
+    }
+
+    .room-badges { display: flex; align-items: center; gap: 8px; margin-top: 7px; flex-wrap: wrap; }
+
+    .badge-live {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-family: 'Share Tech Mono', monospace; font-size: .6rem;
+      color: var(--neon); background: rgba(0,240,160,.08);
+      border: 1px solid rgba(0,240,160,.22);
+      padding: 3px 10px; border-radius: 100px; letter-spacing: .08em;
+    }
+    .badge-live::before { content: '●'; animation: blink 1s infinite; font-size: .5rem; }
+
+    .badge-user {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-family: 'Share Tech Mono', monospace; font-size: .6rem;
+      color: var(--tx2);
+      background: var(--panel2); border: 1px solid var(--border);
+      padding: 3px 10px; border-radius: 100px;
+    }
+    .bu-dot {
+      width: 14px; height: 14px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Orbitron', sans-serif; font-size: .45rem; font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .btn-leave {
+      padding: 9px 18px;
+      background: rgba(255,107,107,.08);
+      color: var(--neon3);
+      border: 1px solid rgba(255,107,107,.22);
+      font-size: .8rem; border-radius: var(--rad);
+      text-transform: uppercase; flex-shrink: 0;
+    }
+    .btn-leave:hover { background: rgba(255,107,107,.16); box-shadow: 0 0 12px rgba(255,107,107,.15); }
+
+    /* ═══════════════════════════════════════
+       MEMBER GRID
+    ═══════════════════════════════════════ */
+    #mg {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+      min-height: 180px;
+    }
+
+    .mc {
+      background: var(--panel);
+      border: 1px solid var(--border2);
+      border-radius: var(--rad-lg);
+      padding: 22px 14px 18px;
+      text-align: center;
+      position: relative; overflow: hidden;
+      transition: border-color .25s, box-shadow .25s, transform .2s;
+      animation: cardIn .3s cubic-bezier(.16,1,.3,1);
+      cursor: default;
+    }
+    @keyframes cardIn { from{opacity:0;transform:scale(.88) translateY(8px)} to{opacity:1;transform:scale(1) translateY(0)} }
+
+    /* corner accents */
+    .mc::before, .mc::after {
+      content: ''; position: absolute;
+      width: 12px; height: 12px;
+    }
+    .mc::before {
+      top: 6px; left: 6px;
+      border-top: 2px solid var(--border2);
+      border-left: 2px solid var(--border2);
+      border-radius: 3px 0 0 0;
+      transition: border-color .25s;
+    }
+    .mc::after {
+      bottom: 6px; right: 6px;
+      border-bottom: 2px solid var(--border2);
+      border-right: 2px solid var(--border2);
+      border-radius: 0 0 3px 0;
+      transition: border-color .25s;
+    }
+
+    .mc.me {
+      border-color: rgba(0,240,160,.3);
+      box-shadow: 0 0 0 1px rgba(0,240,160,.08) inset;
+    }
+    .mc.me::before, .mc.me::after { border-color: rgba(0,240,160,.4); }
+
+    .mc.sp2 {
+      border-color: var(--neon);
+      box-shadow: 0 0 20px rgba(0,240,160,.15), 0 0 0 1px rgba(0,240,160,.2);
+      transform: translateY(-2px);
+    }
+    .mc.sp2::before, .mc.sp2::after { border-color: var(--neon); }
+    .mc.sp2 .mc-glow {
+      opacity: 1;
+    }
+
+    .mc-glow {
+      position: absolute; inset: 0; opacity: 0; transition: opacity .3s;
+      background: radial-gradient(ellipse at 50% -10%, rgba(0,240,160,.1) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    /* avatar */
+    .avw { position: relative; width: 60px; height: 60px; margin: 0 auto 14px; }
+
+    .av2 {
+      width: 60px; height: 60px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.4rem; font-weight: 900;
+      position: relative; z-index: 1;
+      transition: transform .2s, box-shadow .25s;
+    }
+    .mc.sp2 .av2 {
+      transform: scale(1.06);
+      box-shadow: 0 0 0 3px rgba(0,240,160,.25), 0 0 20px rgba(0,240,160,.2);
+    }
+
+    /* speaking bars — replaces the ring with animated equalizer */
+    .av-bars {
+      position: absolute; inset: -8px;
+      display: flex; align-items: center; justify-content: center; gap: 2px;
+      opacity: 0; transition: opacity .25s;
+      pointer-events: none;
+    }
+    .mc.sp2 .av-bars { opacity: 1; }
+    .av-bar {
+      width: 3px; border-radius: 2px;
+      background: var(--neon);
+      box-shadow: 0 0 4px var(--neon);
+      transform-origin: bottom;
+    }
+    .av-bar:nth-child(1) { height: 8px;  animation: bar .6s ease-in-out infinite; }
+    .av-bar:nth-child(2) { height: 14px; animation: bar .6s ease-in-out infinite .1s; }
+    .av-bar:nth-child(3) { height: 10px; animation: bar .6s ease-in-out infinite .2s; }
+    .av-bar:nth-child(4) { height: 16px; animation: bar .6s ease-in-out infinite .05s; }
+    .av-bar:nth-child(5) { height: 8px;  animation: bar .6s ease-in-out infinite .15s; }
+    @keyframes bar {
+      0%,100% { transform: scaleY(1); }
+      50%      { transform: scaleY(2); }
+    }
+
+    .mn {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: .9rem; font-weight: 600;
+      letter-spacing: .04em;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      color: var(--tx);
+    }
+    .mt {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: .58rem; color: var(--tx2);
+      margin-top: 4px; letter-spacing: .06em;
+    }
+    .mt.you { color: var(--neon); }
+
+    /* ═══════════════════════════════════════
+       EMPTY STATE
+    ═══════════════════════════════════════ */
+    .emp {
+      grid-column: 1/-1;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      color: var(--tx2); padding: 36px 16px; gap: 12px;
+    }
+    .emp-icon {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: var(--panel2); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem; opacity: .5;
+    }
+    .emp p {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: .7rem; text-align: center; line-height: 1.8;
+    }
+
+    /* ═══════════════════════════════════════
+       CONTROLS BAR
+    ═══════════════════════════════════════ */
+    .ctrl-bar {
+      background: var(--panel);
+      border: 1px solid var(--border2);
+      border-radius: var(--rad-lg);
+      padding: 18px 24px;
+      display: flex; align-items: center;
+      justify-content: center; gap: 20px;
+      position: relative; overflow: hidden;
+    }
+    .ctrl-bar::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(0,240,160,.2), transparent);
+    }
+
+    .ctrl-group { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+
+    /* main mic button */
+    #mb {
+      width: 66px; height: 66px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem;
+      background: linear-gradient(135deg, var(--neon) 0%, #00c87a 100%);
+      border: none;
+      box-shadow: 0 0 0 4px rgba(0,240,160,.15), 0 4px 20px rgba(0,240,160,.25);
+      transition: all .2s;
+      position: relative; overflow: hidden;
+    }
+    #mb::after {
+      content: '';
+      position: absolute; inset: 0; border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, rgba(255,255,255,.2), transparent 60%);
+    }
+    #mb:hover { transform: scale(1.08); box-shadow: 0 0 0 6px rgba(0,240,160,.2), 0 6px 28px rgba(0,240,160,.35); }
+    #mb:active { transform: scale(.97); }
+    #mb.mt2 {
+      background: linear-gradient(135deg, var(--neon3) 0%, #c0304a 100%);
+      box-shadow: 0 0 0 4px rgba(255,107,107,.15), 0 4px 20px rgba(255,107,107,.25);
+    }
+    #mb.mt2:hover { box-shadow: 0 0 0 6px rgba(255,107,107,.2), 0 6px 28px rgba(255,107,107,.35); }
+
+    .cl {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: .58rem; color: var(--tx2);
+      letter-spacing: .12em; text-transform: uppercase;
+    }
+
+    /* ═══════════════════════════════════════
+       OVERLAY
+    ═══════════════════════════════════════ */
+    #ov {
+      position: fixed; inset: 0;
+      background: rgba(7,10,15,.9); backdrop-filter: blur(6px);
+      display: none; flex-direction: column;
+      align-items: center; justify-content: center;
+      z-index: 100; gap: 14px;
+    }
+    #ov.on { display: flex; }
+    .ov-spinner {
+      width: 44px; height: 44px;
+      border: 2px solid var(--border2);
+      border-top-color: var(--neon);
+      border-right-color: rgba(0,240,160,.4);
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #ov p {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: .78rem; color: var(--tx2);
+      letter-spacing: .08em;
+    }
+
+    /* ═══════════════════════════════════════
+       TOAST
+    ═══════════════════════════════════════ */
+    #ts {
+      position: fixed; bottom: 26px; left: 50%;
+      transform: translateX(-50%) translateY(16px);
+      background: var(--panel2);
+      border: 1px solid var(--border2);
+      color: var(--tx);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: .7rem; padding: 9px 18px;
+      border-radius: 100px; opacity: 0;
+      transition: all .28s cubic-bezier(.16,1,.3,1);
+      pointer-events: none; z-index: 999;
+      white-space: nowrap;
+      box-shadow: 0 4px 16px rgba(0,0,0,.4);
+    }
+    #ts.on {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+<div class="grain"></div>
+
+<!-- file:// blocker -->
+<div id="blocker">
+  <div class="blk">
+    <h2>⚠ MUST SERVE OVER HTTP</h2>
+    <p>Browsers block mic + WebSocket from file:// URLs.</p>
+    <p>Open a terminal in this folder and run:</p>
+    <code>python -m http.server 8080</code>
+    <p>Then open:</p>
+    <code>http://localhost:8080/voicelink.html</code>
+    <p style="margin-top:10px;font-size:.62rem;opacity:.5">Or: npx serve . &nbsp;•&nbsp; Upload to Netlify / GitHub Pages</p>
+  </div>
+</div>
+
+<!-- ═══ LOBBY ═══ -->
+<div class="scr on" id="ls">
+
+  <div class="logo">
+    <div class="logo-badge">
+      <span class="logo-icon">🎮</span>
+      <span class="logo-tag">VOICE COMM SYSTEM</span>
+    </div>
+    <h1>SONIC CALL</h1>
+    <div class="logo-sub"><span>▶</span> POKEMORE TEAM &nbsp;·&nbsp; ONE ROOM &nbsp;·&nbsp; ALWAYS OPEN</div>
+  </div>
+
+  <!-- returning user -->
+  <div class="wcard" id="wc">
+    <div class="card-lbl">Player Detected</div>
+    <div class="wc-row">
+      <div class="wc-av" id="wav"></div>
+      <div>
+        <div class="wc-hey">// WELCOME BACK, PLAYER</div>
+        <div class="wc-nm" id="wnm"></div>
+        <div class="wc-sw" onclick="switchUser()">[ Not you? Switch ]</div>
+      </div>
+    </div>
+    <button class="bp" id="ib" onclick="instantJoin()">▶ &nbsp;JUMP INTO ROOM</button>
+    <div class="eb" id="ei"></div>
+    <button class="brt" id="ri" onclick="instantJoin()" style="display:none">↺ &nbsp;TRY AGAIN</button>
+  </div>
+
+  <!-- first time -->
+  <div class="card scard" id="sc">
+    <div class="card-lbl">Enter Your Player Name</div>
+    <input type="text" id="ni" placeholder="Your name…" maxlength="28" autocomplete="off"
+      onkeydown="if(event.key==='Enter')tryJoin()">
+    <button class="bp" id="jb" onclick="tryJoin()">▶ &nbsp;ENTER THE ROOM</button>
+    <div class="eb" id="es"></div>
+    <button class="brt" id="rs" onclick="tryJoin()" style="display:none">↺ &nbsp;TRY AGAIN</button>
+  </div>
+
+  <div class="nets">
+    <div class="dot ok" id="nd"></div>
+    <span id="nt">// DECENTRALIZED · NO SERVER · NO 429</span>
+  </div>
+
+</div>
+
+<!-- ═══ ROOM ═══ -->
+<div class="scr" id="rs">
+
+  <div class="room-topbar">
+    <div class="room-title-group">
+      <div class="room-title">POKEMORE TEAM ROOM</div>
+      <div class="room-badges">
+        <span class="badge-live">LIVE</span>
+        <span class="badge-user" id="rchip">
+          <span class="bu-dot" id="rchip-dot"></span>
+          <span id="rchip-name"></span>
+        </span>
+      </div>
+    </div>
+    <button class="btn-leave" onclick="leaveRoom()">✕ LEAVE</button>
+  </div>
+
+  <div id="mg"></div>
+
+  <div class="ctrl-bar">
+    <div class="ctrl-group">
+      <button id="mb" onclick="toggleMic()">🎙️</button>
+      <div class="cl" id="ml">LIVE</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- overlay + toast -->
+<div id="ov"><div class="ov-spinner"></div><p id="op">CONNECTING…</p></div>
+<div id="ts"></div>
+
+<!-- ═══ ALL WORKING JS — UNTOUCHED ═══ -->
+<script type="module">
+import { joinRoom } from 'https://esm.sh/trystero/nostr'
+
+const APP_ID  = 'sonic-call-pokemore-2025'
+const ROOM_ID = 'pokemore-main-room'
+const SK      = 'vl_name'
+
+const PAL = [
+  ['#f5a623','#050e12'],['#00f0a0','#050e12'],['#5b8dee','#fff'],
+  ['#e07a5f','#fff'],   ['#b39dff','#fff'],   ['#4fc3f7','#050e12'],
+  ['#f97316','#050e12'],['#ec4899','#fff'],   ['#84cc16','#050e12'],
+  ['#ff6b6b','#fff'],
+]
+function col(n){ let h=0; for(const c of n) h=(h*31+c.charCodeAt(0))>>>0; return PAL[h%PAL.length] }
+
+const gn = () => { try{ return localStorage.getItem(SK)||'' }catch{ return '' } }
+const sn = v  => { try{ localStorage.setItem(SK,v) }catch{} }
+const cn = () => { try{ localStorage.removeItem(SK) }catch{} }
+
+let room=null, myStream=null, myName='', isMuted=false, sendName=null
+let peers={}
+
+function renderLobby(){
+  if(location.protocol==='file:'){ document.getElementById('blocker').classList.add('on'); return }
+  const s=gn()
+  if(s){
+    const[bg,fg]=col(s)
+    const a=document.getElementById('wav')
+    a.style.cssText=`background:${bg};color:${fg}`
+    a.textContent=s[0].toUpperCase()
+    document.getElementById('wnm').textContent=s
+    document.getElementById('wc').classList.add('on')
+    document.getElementById('sc').classList.remove('on')
+  } else {
+    document.getElementById('wc').classList.remove('on')
+    document.getElementById('sc').classList.add('on')
+  }
+}
+
+window.switchUser = () => {
+  cn()
+  document.getElementById('wc').classList.remove('on')
+  document.getElementById('sc').classList.add('on')
+  document.getElementById('ni').value=''
+  document.getElementById('ni').focus()
+}
+
+async function getMic(){
+  if(!navigator.mediaDevices?.getUserMedia)
+    throw{t:'api',m:'Browser does not support mic.\nUse Chrome, Firefox, or Edge.'}
+  if(navigator.permissions){
+    try{
+      const s=await navigator.permissions.query({name:'microphone'})
+      if(s.state==='denied') throw{t:'denied',m:'Mic blocked.\nClick 🔒 in address bar → Microphone → Allow → reload.'}
+    }catch(e){ if(e.t) throw e }
+  }
+  try{
+    return await navigator.mediaDevices.getUserMedia({audio:true,video:false})
+  }catch(e){
+    const n=e.name||''
+    if(n==='NotAllowedError'||n==='PermissionDeniedError') throw{t:'denied',m:'Mic blocked.\nClick 🔒 → Microphone → Allow → reload.'}
+    if(n==='NotFoundError') throw{t:'nd',m:'No microphone found. Plug one in.'}
+    if(n==='NotReadableError') throw{t:'iu',m:'Mic in use by another app. Close Zoom/Teams/Discord.'}
+    if(n==='SecurityError') throw{t:'sec',m:'Mic blocked — must serve over HTTP.\n  python -m http.server 8080'}
+    throw{t:'unk',m:'Mic error: '+e.message}
+  }
+}
+
+window.instantJoin = async () => {
+  const name=gn(); if(!name){ switchUser(); return }
+  clearErr('ei'); hide('ri')
+  setB('ib',true,'⏳  REQUESTING MIC…')
+  let s; try{ s=await getMic() }
+  catch(e){ setB('ib',false,'▶ &nbsp;JUMP INTO ROOM'); showErr('ei',et(e.t),e.m); show('ri'); return }
+  setB('ib',false,'▶ &nbsp;JUMP INTO ROOM')
+  await doJoin(name,s)
+}
+
+window.tryJoin = async () => {
+  const name=document.getElementById('ni').value.trim()
+  if(!name){ showErr('es','NAME REQUIRED','Type your player name first.'); return }
+  clearErr('es'); hide('rs2')
+  setB('jb',true,'⏳  REQUESTING MIC…')
+  let s; try{ s=await getMic() }
+  catch(e){ setB('jb',false,'▶ &nbsp;ENTER THE ROOM'); showErr('es',et(e.t),e.m); show('rs2'); return }
+  setB('jb',false,'▶ &nbsp;ENTER THE ROOM')
+  sn(name)
+  await doJoin(name,s)
+}
+
+async function doJoin(name, stream){
+  myName=name; myStream=stream
+  showOv('JOINING ROOM…')
+  try{ room=joinRoom({appId:APP_ID}, ROOM_ID) }
+  catch(e){
+    hideOv()
+    showErr('ei','CONNECTION FAILED','Could not connect to nostr relay.\nCheck your internet connection.')
+    showErr('es','CONNECTION FAILED','Could not connect to nostr relay.\nCheck your internet connection.')
+    return
+  }
+
+  const [_sendName, getName] = room.makeAction('name')
+  sendName=_sendName
+
+  /* MUST register onPeerStream before addStream */
+  room.onPeerStream((stream, peerId) => {
+    attachAudio(peerId, stream)
+  })
+
+  room.onPeerJoin(peerId => {
+    if(!peers[peerId]) peers[peerId]={name:'…'}
+    sendName(myName, peerId)
+    room.addStream(myStream, peerId)
+    updateGrid()
+  })
+
+  room.onPeerLeave(peerId => {
+    const n=peers[peerId]?.name||'?'
+    drop(peerId)
+    toast(`${n} left the room`)
+  })
+
+  getName((name, peerId) => {
+    if(!peers[peerId]) peers[peerId]={}
+    const isNew=!peers[peerId].name||peers[peerId].name==='…'
+    peers[peerId].name=name
+    updateGrid()
+    if(isNew) toast(`${name} joined`)
+  })
+
+  peers['__me__']={name:myName,isMe:true}
+  startVol('__me__', myStream)
+  room.addStream(myStream)
+  sendName(myName)
+
+  hideOv()
+  enterRoom()
+}
+
+function attachAudio(peerId, stream){
+  document.getElementById('au_'+peerId)?.remove()
+  const a=document.createElement('audio')
+  a.id='au_'+peerId; a.srcObject=stream; a.autoplay=true; a.playsInline=true
+  document.body.appendChild(a)
+  if(!peers[peerId]) peers[peerId]={}
+  peers[peerId].audioEl=a
+  startVol(peerId, stream)
+  updateGrid()
+}
+
+function startVol(id, stream){
+  try{
+    const ctx=new(window.AudioContext||window.webkitAudioContext)()
+    const src=ctx.createMediaStreamSource(stream)
+    const an=ctx.createAnalyser(); an.fftSize=256
+    src.connect(an)
+    const buf=new Uint8Array(an.frequencyBinCount)
+    if(peers[id]) peers[id]._ctx=ctx
+    ;(function tick(){
+      if(!peers[id]){ ctx.close(); return }
+      an.getByteFrequencyData(buf)
+      const avg=buf.reduce((s,v)=>s+v,0)/buf.length
+      const cardId=id==='__me__'?'mc___me__':'mc_'+id
+      document.getElementById(cardId)?.classList.toggle('sp2',avg>5)
+      requestAnimationFrame(tick)
+    })()
+  }catch{}
+}
+
+function updateGrid(){
+  const g=document.getElementById('mg')
+  g.querySelector('.emp')?.remove()
+
+  const sorted=Object.entries(peers).sort(([,a],[,b])=>{
+    if(a.isMe) return -1; if(b.isMe) return 1
+    return(a.name||'').localeCompare(b.name||'')
+  })
+
+  sorted.forEach(([id,p])=>{
+    const cardId='mc_'+id
+    let c=document.getElementById(cardId)
+    if(!c){
+      c=document.createElement('div')
+      c.id=cardId
+      c.className='mc'+(p.isMe?' me':'')
+      g.appendChild(c)
+    }
+    const nm=p.name||'…'
+    const[bg,fg]=col(nm==='…'?id:nm)
+    c.innerHTML=`
+      <div class="mc-glow"></div>
+      <div class="avw">
+        <div class="av2" style="background:${bg};color:${fg}">${esc(nm[0].toUpperCase())}</div>
+        <div class="av-bars">
+          <div class="av-bar"></div><div class="av-bar"></div><div class="av-bar"></div>
+          <div class="av-bar"></div><div class="av-bar"></div>
+        </div>
+      </div>
+      <div class="mn">${esc(nm)}</div>
+      <div class="mt ${p.isMe?'you':''}">${p.isMe?'// YOU':'// MEMBER'}</div>`
+  })
+
+  const ids=new Set(Object.keys(peers))
+  g.querySelectorAll('.mc').forEach(c=>{
+    const pid=c.id.slice(3)
+    if(!ids.has(pid)){
+      c.style.cssText='opacity:0;transform:scale(.88) translateY(6px);transition:all .22s'
+      setTimeout(()=>c.remove(),230)
+    }
+  })
+
+  const others=Object.keys(peers).filter(k=>k!=='__me__')
+  if(others.length===0&&document.getElementById('rs').classList.contains('on')&&!g.querySelector('.emp')){
+    const e=document.createElement('div'); e.className='emp'
+    e.innerHTML='<div class="emp-icon">🎙️</div><p>// YOU\'RE THE ONLY ONE HERE<br>Share this page — teammates join instantly.</p>'
+    g.appendChild(e)
+  }
+}
+
+function drop(peerId){
+  if(!peers[peerId]) return
+  document.getElementById('au_'+peerId)?.remove()
+  try{ peers[peerId]._ctx?.close() }catch{}
+  delete peers[peerId]
+  updateGrid()
+}
+
+window.toggleMic = () => {
+  if(!myStream) return
+  isMuted=!isMuted
+  myStream.getAudioTracks().forEach(t=>t.enabled=!isMuted)
+  document.getElementById('mb').textContent=isMuted?'🔇':'🎙️'
+  document.getElementById('mb').className=isMuted?'mt2':'';
+  // keep id on button — just toggle class
+  document.getElementById('mb').id='mb'
+  document.getElementById('mb').className=(isMuted?'mt2':'')
+  document.getElementById('ml').textContent=isMuted?'MUTED':'LIVE'
+}
+
+function enterRoom(){
+  const[bg,fg]=col(myName)
+  document.getElementById('rchip-dot').style.cssText=`background:${bg};color:${fg}`
+  document.getElementById('rchip-dot').textContent=myName[0].toUpperCase()
+  document.getElementById('rchip-name').textContent=myName.toUpperCase()
+  document.getElementById('ls').classList.remove('on')
+  document.getElementById('rs').classList.add('on')
+  isMuted=false
+  document.getElementById('mb').textContent='🎙️'
+  document.getElementById('mb').className=''
+  document.getElementById('ml').textContent='LIVE'
+  updateGrid()
+}
+
+window.leaveRoom = () => {
+  myStream?.getTracks().forEach(t=>t.stop()); myStream=null
+  document.querySelectorAll('audio').forEach(a=>a.remove())
+  Object.values(peers).forEach(p=>{ try{ p._ctx?.close() }catch{} })
+  peers={}; isMuted=false
+  try{ room?.leave() }catch{}; room=null; sendName=null
+  document.getElementById('rs').classList.remove('on')
+  document.getElementById('ls').classList.add('on')
+  renderLobby()
+}
+
+function showErr(id,title,body){ const e=document.getElementById(id); e.innerHTML=`<strong>${esc(title)}</strong>${esc(body)}`; e.classList.add('on') }
+function clearErr(id){ document.getElementById(id).classList.remove('on') }
+function show(id){ document.getElementById(id).style.display='block' }
+function hide(id){ document.getElementById(id).style.display='none' }
+function setB(id,dis,html){ const b=document.getElementById(id); b.disabled=dis; b.innerHTML=html }
+function showOv(t){ document.getElementById('op').textContent=t; document.getElementById('ov').classList.add('on') }
+function hideOv(){ document.getElementById('ov').classList.remove('on') }
+let _tt
+function toast(m){ const e=document.getElementById('ts'); e.textContent=m; e.classList.add('on'); clearTimeout(_tt); _tt=setTimeout(()=>e.classList.remove('on'),2800) }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
+function et(t){ return{denied:'MIC BLOCKED',nd:'NO MIC FOUND',iu:'MIC IN USE',sec:'FILE ACCESS BLOCKED',api:'BROWSER NOT SUPPORTED',unk:'MIC ERROR'}[t]||'ERROR' }
+
+renderLobby()
+</script>
+</body>
+</html>
