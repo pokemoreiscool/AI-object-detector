@@ -1,14 +1,808 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>404 - Page Not Found</title>
-    <style>
-        body { text-align: center; padding: 50px; font-family: sans-serif; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ComConnect01</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary:    #313338;
+      --bg-secondary:  #2b2d31;
+      --bg-tertiary:   #1e1f22;
+      --bg-input:      #383a40;
+      --bg-hover:      rgba(255,255,255,.06);
+      --bg-active:     rgba(255,255,255,.1);
+      --bg-modifier:   rgba(0,0,0,.2);
+      --accent:        #5865f2;
+      --accent-hover:  #4752c4;
+      --green:         #23a55a;
+      --red:           #f23f42;
+      --red-hover:     #da373c;
+      --text-normal:   #dbdee1;
+      --text-muted:    #80848e;
+      --text-link:     #00a8fc;
+      --text-header:   #f2f3f5;
+      --border:        rgba(255,255,255,.06);
+      --shadow:        0 1px 0 rgba(0,0,0,.2);
+      --radius-sm:     4px;
+      --radius:        8px;
+      --radius-lg:     16px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--bg-primary); color: var(--text-normal); font-size: 15px; line-height: 1.375; }
+    button { cursor: pointer; border: none; font-family: inherit; transition: all .15s; }
+    input, textarea { font-family: inherit; }
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--bg-tertiary); border-radius: 4px; border: 2px solid transparent; background-clip: content-box; }
+
+    /* LOBBY */
+    #lobby { position: fixed; inset: 0; z-index: 200; background: var(--bg-secondary); display: flex; align-items: center; justify-content: center; padding: 20px; }
+    #lobby.hidden { display: none; }
+    .login-box { background: var(--bg-primary); border-radius: var(--radius-lg); padding: 32px; width: 100%; max-width: 440px; box-shadow: 0 8px 16px rgba(0,0,0,.24); }
+    .login-logo { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+    .login-logo-icon { width: 44px; height: 44px; border-radius: var(--radius); background: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; flex-shrink: 0; }
+    .login-logo-name { font-size: 1.25rem; font-weight: 700; color: var(--text-header); letter-spacing: -.02em; }
+    .login-logo-tag { font-size: .75rem; color: var(--text-muted); }
+    .form-label { display: block; font-size: .75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 8px; }
+    .form-input { width: 100%; background: var(--bg-input); border: 1px solid transparent; border-radius: var(--radius-sm); padding: 10px 12px; color: var(--text-normal); font-size: .95rem; outline: none; transition: border-color .15s; }
+    .form-input:focus { border-color: var(--accent); }
+    .form-input::placeholder { color: var(--text-muted); }
+    .form-row { margin-bottom: 20px; }
+    .btn-primary { width: 100%; padding: 11px; background: var(--accent); color: #fff; font-size: .95rem; font-weight: 600; border-radius: var(--radius-sm); }
+    .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+    .btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+    .login-returning { display: flex; align-items: center; gap: 14px; background: var(--bg-secondary); border-radius: var(--radius); padding: 14px; margin-bottom: 20px; }
+    .login-ret-av { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: 700; color: #fff; flex-shrink: 0; }
+    .login-ret-name { font-weight: 600; color: var(--text-header); }
+    .login-ret-switch { font-size: .8rem; color: var(--text-link); cursor: pointer; }
+    .login-ret-switch:hover { text-decoration: underline; }
+    .login-err { background: rgba(242,63,66,.1); border: 1px solid rgba(242,63,66,.3); border-radius: var(--radius-sm); padding: 10px 12px; font-size: .85rem; color: #f23f42; margin-top: 12px; display: none; }
+    .login-err.on { display: block; }
+
+    /* APP */
+    #app { display: none; height: 100vh; flex-direction: row; }
+    #app.on { display: flex; }
+
+    /* Server strip */
+    .server-strip { width: 72px; flex-shrink: 0; background: var(--bg-tertiary); display: flex; flex-direction: column; align-items: center; padding: 12px 0; gap: 8px; }
+    .server-btn { width: 48px; height: 48px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: 700; color: #fff; cursor: pointer; transition: border-radius .2s; flex-shrink: 0; position: relative; }
+    .server-btn:hover, .server-btn.active { border-radius: var(--radius); }
+    .server-btn::before { content: ''; position: absolute; left: -12px; top: 50%; transform: translateY(-50%) scaleY(0); width: 4px; height: 8px; background: #fff; border-radius: 0 4px 4px 0; transition: transform .2s, height .2s; }
+    .server-btn.active::before { transform: translateY(-50%) scaleY(1); height: 40px; }
+    .server-strip-divider { width: 32px; height: 2px; border-radius: 1px; background: var(--bg-input); flex-shrink: 0; }
+
+    /* Sidebar */
+    .sidebar { width: 240px; flex-shrink: 0; background: var(--bg-secondary); display: flex; flex-direction: column; }
+    .sidebar-header { padding: 12px 16px; box-shadow: var(--shadow); flex-shrink: 0; }
+    .sidebar-header-name { font-size: .95rem; font-weight: 700; color: var(--text-header); }
+    .sidebar-section { padding: 16px 8px 4px; }
+    .sidebar-section-label { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); padding: 0 8px; }
+    .channel-item { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: var(--radius-sm); cursor: pointer; color: var(--text-muted); font-size: .9rem; font-weight: 500; transition: background .1s, color .1s; }
+    .channel-item:hover { background: var(--bg-hover); color: var(--text-normal); }
+    .channel-item.active { background: var(--bg-active); color: var(--text-header); font-weight: 600; }
+    .vc-item { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: var(--radius-sm); cursor: pointer; color: var(--text-muted); font-size: .9rem; font-weight: 500; transition: background .1s, color .1s; }
+    .vc-item:hover { background: var(--bg-hover); color: var(--text-normal); }
+    .vc-item.in-call { color: var(--green); }
+    .vc-connected-users { padding: 2px 8px 6px 28px; display: none; }
+    .vc-connected-users.on { display: block; }
+    .vc-user-row { display: flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: var(--radius-sm); font-size: .82rem; color: var(--text-muted); }
+    .vc-user-row.speaking { color: var(--green); }
+    .vc-user-av-sm { width: 20px; height: 20px; border-radius: 50%; font-size: .55rem; font-weight: 700; color: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .vc-speak-ring { box-shadow: 0 0 0 2px var(--green); }
+    .sb-members-list { flex: 1; overflow-y: auto; padding: 0 8px; }
+    .user-panel { margin-top: auto; background: var(--bg-modifier); padding: 8px; display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    .user-panel-av { width: 32px; height: 32px; border-radius: 50%; font-size: .85rem; font-weight: 700; color: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; position: relative; }
+    .user-panel-av::after { content: ''; position: absolute; bottom: -1px; right: -1px; width: 10px; height: 10px; border-radius: 50%; background: var(--green); border: 2px solid var(--bg-secondary); }
+    .user-panel-info { flex: 1; overflow: hidden; }
+    .user-panel-name { font-size: .85rem; font-weight: 600; color: var(--text-header); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-panel-tag { font-size: .72rem; color: var(--text-muted); }
+    .user-panel-btns { display: flex; gap: 2px; }
+    .icon-btn { width: 32px; height: 32px; border-radius: var(--radius-sm); background: transparent; color: var(--text-muted); display: flex; align-items: center; justify-content: center; font-size: 1rem; }
+    .icon-btn:hover { background: var(--bg-hover); color: var(--text-normal); }
+    .icon-btn.danger:hover { background: rgba(242,63,66,.15); color: var(--red); }
+    .member-row { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: var(--radius-sm); cursor: pointer; }
+    .member-row:hover { background: var(--bg-hover); }
+    .member-av { width: 32px; height: 32px; border-radius: 50%; font-size: .82rem; font-weight: 700; color: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; position: relative; }
+    .member-av::after { content: ''; position: absolute; bottom: -1px; right: -1px; width: 10px; height: 10px; border-radius: 50%; background: var(--green); border: 2px solid var(--bg-secondary); }
+    .member-name { font-size: .9rem; font-weight: 500; color: var(--text-normal); }
+
+    /* MAIN */
+    .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .notif-banner { display: none; align-items: center; gap: 10px; background: var(--accent); padding: 8px 16px; font-size: .85rem; color: #fff; flex-shrink: 0; }
+    .notif-banner.on { display: flex; }
+    .notif-banner-text { flex: 1; }
+    .notif-banner-btn { padding: 5px 14px; background: rgba(255,255,255,.2); border-radius: var(--radius-sm); color: #fff; font-size: .82rem; font-weight: 600; }
+    .notif-banner-btn:hover { background: rgba(255,255,255,.3); }
+    .notif-banner-x { background: transparent; color: rgba(255,255,255,.7); font-size: .9rem; }
+    .notif-banner-x:hover { color: #fff; }
+    .chat-header { height: 48px; flex-shrink: 0; display: flex; align-items: center; padding: 0 16px; box-shadow: var(--shadow); gap: 10px; background: var(--bg-primary); z-index: 10; }
+    .chat-header-icon { font-size: 1.1rem; color: var(--text-muted); }
+    .chat-header-name { font-size: .95rem; font-weight: 700; color: var(--text-header); }
+    .chat-header-divider { width: 1px; height: 20px; background: var(--bg-input); }
+    .chat-header-topic { font-size: .85rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .chat-header-actions { margin-left: auto; display: flex; gap: 4px; }
+    .header-btn { width: 32px; height: 32px; border-radius: var(--radius-sm); background: transparent; color: var(--text-muted); font-size: 1.1rem; display: flex; align-items: center; justify-content: center; }
+    .header-btn:hover { background: var(--bg-hover); color: var(--text-normal); }
+    .header-btn.active { color: var(--text-header); }
+
+    /* CALL VIEW */
+    #callView { flex: 1; display: none; flex-direction: column; background: #111214; overflow: hidden; }
+    #callView.on { display: flex; }
+    .call-grid-wrap { flex: 1; display: flex; align-items: center; justify-content: center; padding: 24px; overflow: hidden; position: relative; }
+    .call-channel-label { position: absolute; top: 16px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,.5); border-radius: 100px; padding: 5px 14px; font-size: .8rem; color: var(--text-muted); white-space: nowrap; }
+    .call-channel-label span { color: var(--text-normal); font-weight: 600; }
+    .call-grid { display: grid; gap: 12px; width: 100%; max-width: 900px; align-items: center; justify-items: center; }
+    .call-tile { background: #1a1b1e; border-radius: var(--radius-lg); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 28px 20px 20px; position: relative; width: 100%; aspect-ratio: 4/3; transition: box-shadow .2s; }
+    .call-tile.speaking { box-shadow: 0 0 0 3px var(--green), 0 0 24px rgba(35,165,90,.2); }
+    .call-tile-av { width: 80px; height: 80px; border-radius: 50%; font-size: 1.8rem; font-weight: 700; color: #fff; display: flex; align-items: center; justify-content: center; margin-bottom: 14px; transition: box-shadow .2s; }
+    .call-tile.speaking .call-tile-av { box-shadow: 0 0 0 3px var(--green); }
+    .call-tile-name { font-size: .9rem; font-weight: 600; color: var(--text-normal); text-align: center; }
+    .call-tile-you { font-size: .75rem; color: var(--text-muted); margin-top: 2px; }
+    .call-tile-muted { position: absolute; top: 10px; right: 10px; background: var(--red); color: #fff; border-radius: 50%; width: 24px; height: 24px; font-size: .7rem; display: none; align-items: center; justify-content: center; }
+    .call-tile-muted.on { display: flex; }
+    .call-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-muted); gap: 12px; padding: 40px; }
+    .call-empty-icon { font-size: 3rem; opacity: .3; }
+    .call-empty-title { font-size: 1rem; font-weight: 600; color: var(--text-normal); }
+    .call-empty-sub { font-size: .85rem; }
+    .call-controls { height: 80px; flex-shrink: 0; background: #292b2f; display: flex; align-items: center; justify-content: center; gap: 16px; }
+    .call-ctrl-group { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .call-ctrl-btn { width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; }
+    .call-ctrl-btn.grey { background: #36393f; color: var(--text-normal); }
+    .call-ctrl-btn.grey:hover { background: #3e4147; }
+    .call-ctrl-btn.grey.muted { background: var(--red); color: #fff; }
+    .call-ctrl-btn.red { background: var(--red); color: #fff; }
+    .call-ctrl-btn.red:hover { background: var(--red-hover); transform: scale(1.05); }
+    .call-ctrl-label { font-size: .7rem; color: var(--text-muted); font-weight: 500; }
+
+    /* CHAT VIEW */
+    #chatView { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    #chatView.hidden { display: none; }
+    .messages-wrap { flex: 1; overflow-y: auto; padding: 16px 0 8px; }
+    .chat-welcome { padding: 16px 16px 24px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+    .chat-welcome-icon { width: 68px; height: 68px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 1.8rem; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; }
+    .chat-welcome h2 { font-size: 1.4rem; font-weight: 700; color: var(--text-header); margin-bottom: 4px; }
+    .chat-welcome p { font-size: .9rem; color: var(--text-muted); }
+    .chat-loading { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 32px 16px; color: var(--text-muted); font-size: .88rem; }
+    .chat-loading-spinner { width: 18px; height: 18px; border: 2px solid var(--bg-input); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; flex-shrink: 0; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .msg-group { padding: 2px 16px; position: relative; }
+    .msg-group:hover { background: rgba(0,0,0,.06); }
+    .msg-group.with-header { padding-top: 16px; margin-top: 4px; }
+    .msg-row { display: flex; gap: 16px; align-items: flex-start; }
+    .msg-av { width: 40px; height: 40px; border-radius: 50%; font-size: 1rem; font-weight: 700; color: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .msg-indent { width: 40px; flex-shrink: 0; }
+    .msg-header { display: flex; align-items: baseline; gap: 8px; margin-bottom: 2px; }
+    .msg-sender { font-size: .95rem; font-weight: 600; color: var(--text-header); }
+    .msg-timestamp { font-size: .75rem; color: var(--text-muted); }
+    .msg-content { font-size: .95rem; color: var(--text-normal); line-height: 1.45; word-break: break-word; white-space: pre-wrap; }
+    .msg-timestamp-hover { position: absolute; left: 0; width: 56px; text-align: right; top: 50%; transform: translateY(-50%); font-size: .68rem; color: var(--text-muted); display: none; padding-right: 4px; }
+    .msg-group:not(.with-header):hover .msg-timestamp-hover { display: block; }
+    .msg-system { display: flex; align-items: center; gap: 10px; padding: 4px 16px; margin: 2px 0; }
+    .msg-system-line { flex: 1; height: 1px; background: var(--border); }
+    .msg-system-text { font-size: .78rem; color: var(--text-muted); white-space: nowrap; }
+    .typing-indicator { padding: 4px 16px 8px; font-size: .82rem; color: var(--text-muted); display: none; align-items: center; gap: 6px; min-height: 28px; }
+    .typing-indicator.on { display: flex; }
+    .typing-dots { display: flex; gap: 3px; align-items: center; }
+    .typing-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--text-muted); opacity: .6; }
+    .typing-dot:nth-child(1) { animation: bounce .9s ease-in-out infinite; }
+    .typing-dot:nth-child(2) { animation: bounce .9s ease-in-out infinite .15s; }
+    .typing-dot:nth-child(3) { animation: bounce .9s ease-in-out infinite .3s; }
+    @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
+    .input-area { padding: 0 16px 20px; flex-shrink: 0; }
+    .input-box { background: var(--bg-input); border-radius: var(--radius); display: flex; align-items: flex-end; }
+    .input-box-btn { width: 44px; height: 44px; flex-shrink: 0; background: transparent; color: var(--text-muted); font-size: 1.2rem; display: flex; align-items: center; justify-content: center; border-radius: var(--radius); }
+    .input-box-btn:hover { color: var(--text-normal); }
+    #msgInput { flex: 1; background: transparent; border: none; outline: none; color: var(--text-normal); font-size: .95rem; padding: 11px 4px; resize: none; min-height: 44px; max-height: 200px; overflow-y: auto; line-height: 1.45; }
+    #msgInput::placeholder { color: var(--text-muted); }
+    .input-actions { display: flex; align-items: center; padding-right: 4px; gap: 2px; }
+    .send-btn { width: 36px; height: 36px; border-radius: var(--radius-sm); background: var(--accent); color: #fff; font-size: 1rem; display: flex; align-items: center; justify-content: center; }
+    .send-btn:hover { background: var(--accent-hover); }
+
+    /* Members panel */
+    .members-panel { width: 240px; flex-shrink: 0; background: var(--bg-secondary); padding: 16px 8px; overflow-y: auto; display: none; }
+    .members-panel.on { display: block; }
+    .members-section-label { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); padding: 0 8px; margin-bottom: 4px; }
+
+    /* Toast + Overlay */
+    #toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(8px); background: #111214; color: var(--text-normal); font-size: .85rem; padding: 10px 18px; border-radius: var(--radius); opacity: 0; transition: all .25s cubic-bezier(.16,1,.3,1); pointer-events: none; z-index: 9999; box-shadow: 0 4px 24px rgba(0,0,0,.4); white-space: nowrap; }
+    #toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
+    #overlay { position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 500; display: none; align-items: center; justify-content: center; }
+    #overlay.on { display: flex; }
+    .spinner { width: 40px; height: 40px; border: 3px solid var(--bg-input); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; }
+  </style>
 </head>
 <body>
-    <h1>404</h1>
-    <p>Sorry, the page you're looking for cannot be found.</p>
+
+<!-- LOBBY -->
+<div id="lobby">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-logo-icon">💬</div>
+      <div>
+        <div class="login-logo-name">ComConnect01</div>
+        <div class="login-logo-tag">Team messaging &amp; calls</div>
+      </div>
+    </div>
+    <div class="login-returning" id="returningCard" style="display:none">
+      <div class="login-ret-av" id="retAvatar"></div>
+      <div style="flex:1;overflow:hidden">
+        <div class="login-ret-name" id="retName"></div>
+        <div class="login-ret-switch" onclick="switchUser()">Not you? Switch account</div>
+      </div>
+    </div>
+    <div id="nameForm">
+      <div class="form-row">
+        <label class="form-label" for="nameInput">Display name</label>
+        <input class="form-input" type="text" id="nameInput" placeholder="Enter your name"
+          maxlength="28" autocomplete="off" onkeydown="if(event.key==='Enter')joinChat()">
+      </div>
+    </div>
+    <button class="btn-primary" id="joinBtn" onclick="joinChat()">Join Server</button>
+    <div class="login-err" id="loginErr"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="server-strip">
+    <div class="server-btn active" title="ComConnect01">💬</div>
+    <div class="server-strip-divider"></div>
+    <div class="server-btn" style="background:#36393f;font-size:.9rem;color:var(--text-muted)">+</div>
+  </div>
+
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-header-name">ComConnect01</div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Text Channels</div>
+      <div class="channel-item active"><span class="channel-icon">#</span> general</div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Voice Channels</div>
+      <div class="vc-item" id="vcItem" onclick="toggleCall()">
+        <span class="channel-icon">🔊</span> General
+      </div>
+      <div class="vc-connected-users" id="vcUsers"></div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Online — <span id="memberCount">1</span></div>
+    </div>
+    <div class="sb-members-list" id="sidebarMembers"></div>
+    <div class="user-panel">
+      <div class="user-panel-av" id="selfAv"></div>
+      <div class="user-panel-info">
+        <div class="user-panel-name" id="selfName"></div>
+        <div class="user-panel-tag">Online</div>
+      </div>
+      <div class="user-panel-btns">
+        <button class="icon-btn" id="selfMicBtn" onclick="toggleMic()" title="Mute/Unmute">🎙️</button>
+        <button class="icon-btn danger" onclick="leaveRoom()" title="Disconnect">⏏️</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="notif-banner" id="notifBanner">
+      <span class="notif-banner-text">🔔 Enable notifications to get alerts when teammates message you</span>
+      <button class="notif-banner-btn" onclick="requestNotifs()">Enable</button>
+      <button class="notif-banner-x" onclick="dismissNotifs()">✕</button>
+    </div>
+
+    <div class="chat-header">
+      <span class="chat-header-icon">#</span>
+      <span class="chat-header-name">general</span>
+      <div class="chat-header-divider"></div>
+      <span class="chat-header-topic">Messages saved forever · P2P voice calls</span>
+      <div class="chat-header-actions">
+        <button class="header-btn" id="callHeaderBtn" onclick="toggleCall()" title="Voice Call">📞</button>
+        <button class="header-btn" id="membersBtn" onclick="toggleMembersPanel()" title="Members">👥</button>
+      </div>
+    </div>
+
+    <!-- Call view -->
+    <div id="callView">
+      <div class="call-grid-wrap">
+        <div class="call-channel-label">Voice Channel · <span>General</span></div>
+        <div class="call-grid" id="callGrid"></div>
+      </div>
+      <div class="call-controls">
+        <div class="call-ctrl-group">
+          <button class="call-ctrl-btn grey" id="callMicBtn" onclick="toggleMic()">🎙️</button>
+          <div class="call-ctrl-label" id="callMicLabel">Mute</div>
+        </div>
+        <div class="call-ctrl-group">
+          <button class="call-ctrl-btn red" onclick="endCall()">📵</button>
+          <div class="call-ctrl-label">End Call</div>
+        </div>
+        <div class="call-ctrl-group">
+          <button class="call-ctrl-btn grey" onclick="showChat()">💬</button>
+          <div class="call-ctrl-label">Chat</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chat view -->
+    <div id="chatView">
+      <div class="messages-wrap" id="messagesWrap">
+        <div class="chat-welcome">
+          <div class="chat-welcome-icon">#</div>
+          <h2>Welcome to #general</h2>
+          <p>Messages are saved forever. Say hi to your team!</p>
+        </div>
+        <div class="chat-loading" id="chatLoading">
+          <div class="chat-loading-spinner"></div>
+          Loading message history…
+        </div>
+        <div id="messages"></div>
+      </div>
+      <div class="typing-indicator" id="typingIndicator">
+        <div class="typing-dots">
+          <div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>
+        </div>
+        <span id="typingText"></span>
+      </div>
+      <div class="input-area">
+        <div class="input-box">
+          <button class="input-box-btn">➕</button>
+          <textarea id="msgInput" placeholder="Message #general"
+            onkeydown="handleKey(event)" oninput="handleTyping()"></textarea>
+          <div class="input-actions">
+            <button class="icon-btn" style="font-size:.95rem">😊</button>
+            <button class="send-btn" onclick="sendMsg()">➤</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="members-panel" id="membersPanel">
+    <div class="members-section-label">Online</div>
+    <div id="membersList"></div>
+  </div>
+</div>
+
+<div id="overlay"><div class="spinner"></div></div>
+<div id="toast"></div>
+
+<script type="module">
+// ══ FIREBASE REALTIME DATABASE ══
+import { initializeApp }
+  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js'
+import { getDatabase, ref, push, onChildAdded }
+  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js'
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCY7YVRfLq_PRzGLDiVumHitjD5T-lISuY",
+  authDomain: "comconnect01-d99ca.firebaseapp.com",
+  databaseURL: "https://comconnect01-d99ca-default-rtdb.firebaseio.com",
+  projectId: "comconnect01-d99ca",
+  storageBucket: "comconnect01-d99ca.firebasestorage.app",
+  messagingSenderId: "258880878067",
+  appId: "1:258880878067:web:ca520e61ea112738bc0e86",
+  measurementId: "G-LRH2Y8MKL3"
+}
+
+const fbApp  = initializeApp(firebaseConfig)
+const db     = getDatabase(fbApp)
+const msgRef = ref(db, 'messages')
+
+// ══ P2P via TRYSTERO (voice + presence only) ══
+import { joinRoom as trysteroJoin } from 'https://esm.sh/trystero/nostr'
+
+const APP_ID  = 'comconnect01-v2'
+const ROOM_ID = 'comconnect01-general'
+const SK      = 'cc01_name'
+
+const COLORS = ['#5865f2','#57f287','#eb459e','#faa61a','#ed4245','#3ba55d','#9b59b6','#1abc9c','#e67e22','#e91e63','#00bcd4','#f0b132']
+function col(s){ let h=0; for(const c of s) h=(h*31+c.charCodeAt(0))>>>0; return COLORS[h%COLORS.length] }
+
+const gn = () => { try{ return localStorage.getItem(SK)||'' }catch{ return '' } }
+const sn = v  => { try{ localStorage.setItem(SK,v) }catch{} }
+const cn = () => { try{ localStorage.removeItem(SK) }catch{} }
+
+let room=null, myStream=null, myName='', isMuted=false
+let sendNameFn=null, sendTypingFn=null, sendVoiceFn=null
+let peers={}
+let renderedIds=new Set()
+let inCall=false
+let typingTimers={}, myTypingTimer=null, typingActive=false
+let notifGranted=Notification.permission==='granted'
+let unread=0, hasFocus=true
+let showingMembers=false
+let historyLoaded=false
+
+document.addEventListener('visibilitychange',()=>{ hasFocus=!document.hidden; if(hasFocus){unread=0;updateTitle()} })
+window.addEventListener('focus',()=>{ hasFocus=true; unread=0; updateTitle() })
+window.addEventListener('blur',()=>hasFocus=false)
+function updateTitle(){ document.title=unread>0?`(${unread}) ComConnect01`:'ComConnect01' }
+
+// ── LOBBY ──
+function initLobby(){
+  const saved=gn()
+  if(saved){
+    const av=document.getElementById('retAvatar')
+    av.style.background=col(saved); av.textContent=saved[0].toUpperCase()
+    document.getElementById('retName').textContent=saved
+    document.getElementById('returningCard').style.display='flex'
+    document.getElementById('nameForm').style.display='none'
+    document.getElementById('joinBtn').textContent='Continue as '+saved
+  } else {
+    document.getElementById('returningCard').style.display='none'
+    document.getElementById('nameForm').style.display='block'
+    document.getElementById('joinBtn').textContent='Join Server'
+    setTimeout(()=>document.getElementById('nameInput').focus(),100)
+  }
+}
+
+window.switchUser=()=>{
+  cn()
+  document.getElementById('returningCard').style.display='none'
+  document.getElementById('nameForm').style.display='block'
+  document.getElementById('joinBtn').textContent='Join Server'
+  document.getElementById('nameInput').value=''
+  document.getElementById('nameInput').focus()
+}
+
+window.joinChat=async()=>{
+  let name=gn()
+  if(!name){ name=document.getElementById('nameInput').value.trim() }
+  if(!name){ showLoginErr('Please enter your display name.'); return }
+  clearLoginErr(); sn(name); showOverlay()
+  await doJoin(name)
+  hideOverlay()
+}
+
+async function doJoin(name){
+  myName=name
+  try{ room=trysteroJoin({appId:APP_ID},ROOM_ID) }
+  catch(e){ showLoginErr('Connection failed. Check your internet.'); return }
+
+  const [_sn,getName]     = room.makeAction('name')
+  const [_st,getTyping]   = room.makeAction('typing')
+  const [_sv,getVoice]    = room.makeAction('voice')
+  sendNameFn=_sn; sendTypingFn=_st; sendVoiceFn=_sv
+
+  room.onPeerStream((stream,pid)=>attachAudio(pid,stream))
+
+  room.onPeerJoin(pid=>{
+    if(!peers[pid]) peers[pid]={name:'…'}
+    sendNameFn(myName,pid); updateUI()
+  })
+
+  room.onPeerLeave(pid=>{
+    const n=peers[pid]?.name||'?'
+    dropPeer(pid); addSysMsg(`${n} left`); toast(`${n} disconnected`)
+  })
+
+  getName((name,pid)=>{
+    const isNew=!peers[pid]||peers[pid].name==='…'
+    if(!peers[pid]) peers[pid]={}
+    peers[pid].name=name; updateUI()
+    if(isNew){ addSysMsg(`${name} joined`); toast(`👋 ${name} joined`) }
+    if(inCall&&myStream){ room.addStream(myStream,pid); sendVoiceFn('incall',pid) }
+  })
+
+  getTyping((val,pid)=>{
+    const nm=peers[pid]?.name||'?'
+    if(val==='start') startTypingFor(pid,nm); else clearTypingFor(pid)
+  })
+
+  getVoice(async(sig,pid)=>{
+    if(sig==='incall'&&inCall&&myStream) room.addStream(myStream,pid)
+    if(sig==='endcall'){
+      document.getElementById('au_'+pid)?.remove()
+      if(peers[pid]){ peers[pid].speaking=false; delete peers[pid].audioEl }
+      updateCallGrid(); updateVcUsers()
+    }
+  })
+
+  sendNameFn(myName)
+
+  // ══ FIREBASE: load history + listen for new messages ══
+  onChildAdded(msgRef,(snapshot)=>{
+    const d=snapshot.val(); if(!d) return
+    const key=snapshot.key
+    if(renderedIds.has(key)) return
+    renderedIds.add(key)
+    addMessage({ id:key, from:d.from, text:d.text, ts:d.ts||Date.now(), mine:d.from===myName, silent:!historyLoaded })
+  })
+
+  // Hide loading spinner after history batch finishes (fires synchronously)
+  setTimeout(()=>{
+    historyLoaded=true
+    document.getElementById('chatLoading').style.display='none'
+    scrollBottom()
+  },900)
+
+  // Show app
+  document.getElementById('lobby').classList.add('hidden')
+  document.getElementById('app').classList.add('on')
+  const av=document.getElementById('selfAv')
+  av.style.background=col(myName); av.textContent=myName[0].toUpperCase()
+  document.getElementById('selfName').textContent=myName
+
+  if(Notification.permission==='default') document.getElementById('notifBanner').classList.add('on')
+
+  updateUI()
+  setTimeout(()=>document.getElementById('msgInput').focus(),100)
+}
+
+// ── UI ──
+function updateUI(){ updateSidebarMembers(); updateMembersPanel(); updateVcUsers(); document.getElementById('memberCount').textContent=Object.keys(peers).length+1 }
+
+function updateSidebarMembers(){
+  const c=document.getElementById('sidebarMembers'); c.innerHTML=''
+  const entries=Object.entries(peers).sort(([,a],[,b])=>(a.name||'').localeCompare(b.name||''))
+  if(!entries.length){ c.innerHTML='<div style="padding:4px 8px;font-size:.8rem;color:var(--text-muted)">Invite teammates!</div>'; return }
+  entries.forEach(([id,p])=>{
+    const nm=p.name||'…'; const bg=col(nm==='…'?id:nm)
+    const d=document.createElement('div'); d.className='member-row'
+    d.innerHTML=`<div class="member-av" style="background:${bg}">${esc(nm[0].toUpperCase())}</div><div class="member-name">${esc(nm)}</div>`
+    c.appendChild(d)
+  })
+}
+
+function updateMembersPanel(){
+  const c=document.getElementById('membersList'); c.innerHTML=''
+  const selfD=document.createElement('div'); selfD.className='member-row'
+  selfD.innerHTML=`<div class="member-av" style="background:${col(myName)}">${esc(myName[0].toUpperCase())}</div><div><div class="member-name">${esc(myName)}</div><div style="font-size:.75rem;color:var(--text-muted)">You</div></div>`
+  c.appendChild(selfD)
+  Object.entries(peers).sort(([,a],[,b])=>(a.name||'').localeCompare(b.name||'')).forEach(([id,p])=>{
+    const nm=p.name||'…'; const bg=col(nm==='…'?id:nm)
+    const d=document.createElement('div'); d.className='member-row'
+    d.innerHTML=`<div class="member-av" style="background:${bg}">${esc(nm[0].toUpperCase())}</div><div class="member-name">${esc(nm)}</div>`
+    c.appendChild(d)
+  })
+}
+
+function updateVcUsers(){
+  const c=document.getElementById('vcUsers')
+  const callPeers=Object.entries(peers).filter(([,p])=>p.audioEl||p.speaking)
+  if(!inCall&&!callPeers.length){ c.classList.remove('on'); c.innerHTML=''; document.getElementById('vcItem').classList.remove('in-call'); return }
+  c.classList.add('on'); document.getElementById('vcItem').classList.add('in-call'); c.innerHTML=''
+  if(inCall){
+    const d=document.createElement('div'); d.className='vc-user-row'
+    d.innerHTML=`<div class="vc-user-av-sm" style="background:${col(myName)}">${esc(myName[0].toUpperCase())}</div>${esc(myName)} (You)`
+    c.appendChild(d)
+  }
+  callPeers.forEach(([id,p])=>{
+    const nm=p.name||'…'; const bg=col(nm==='…'?id:nm)
+    const d=document.createElement('div'); d.className='vc-user-row'+(p.speaking?' speaking':'')
+    d.innerHTML=`<div class="vc-user-av-sm${p.speaking?' vc-speak-ring':''}" style="background:${bg}">${esc(nm[0].toUpperCase())}</div>${esc(nm)}`
+    c.appendChild(d)
+  })
+}
+
+// ── CALL ──
+function updateCallGrid(){
+  const grid=document.getElementById('callGrid'); grid.innerHTML=''
+  const pp=[]
+  if(inCall) pp.push({id:'__me__',name:myName,isMe:true,muted:isMuted,speaking:peers['__me__']?.speaking})
+  Object.entries(peers).filter(([,p])=>p.audioEl).forEach(([id,p])=>pp.push({id,name:p.name||'…',speaking:p.speaking}))
+  if(!pp.length){
+    grid.style.gridTemplateColumns='1fr'
+    grid.innerHTML='<div class="call-empty"><div class="call-empty-icon">🎙️</div><div class="call-empty-title">You\'re the only one here</div><div class="call-empty-sub">Invite teammates — they join instantly</div></div>'
+    return
+  }
+  const cols=pp.length<=1?1:pp.length<=4?2:pp.length<=9?3:4
+  grid.style.gridTemplateColumns=`repeat(${cols},1fr)`
+  pp.forEach(p=>{
+    const tile=document.createElement('div')
+    tile.className='call-tile'+(p.speaking?' speaking':''); tile.id='tile_'+p.id
+    tile.innerHTML=`<div class="call-tile-muted${p.muted?' on':''}" id="tilemute_${p.id}">🔇</div><div class="call-tile-av" style="background:${col(p.name)}">${esc(p.name[0].toUpperCase())}</div><div class="call-tile-name">${esc(p.name)}</div>${p.isMe?'<div class="call-tile-you">You</div>':''}`
+    grid.appendChild(tile)
+  })
+}
+
+window.showChat=()=>{ document.getElementById('callView').classList.remove('on'); document.getElementById('chatView').classList.remove('hidden'); document.getElementById('msgInput').focus() }
+function showCallView(){ document.getElementById('chatView').classList.add('hidden'); document.getElementById('callView').classList.add('on'); updateCallGrid() }
+window.toggleCall=async()=>{ if(inCall) endCall(); else await startCall() }
+
+async function startCall(){
+  if(inCall) return
+  try{ myStream=await navigator.mediaDevices.getUserMedia({audio:true,video:false}) }
+  catch(e){ toast('⚠️ Microphone access denied or not found'); return }
+  inCall=true; isMuted=false
+  if(!peers['__me__']) peers['__me__']={}
+  peers['__me__'].name=myName
+  startVolMonitor('__me__',myStream)
+  Object.keys(peers).filter(k=>k!=='__me__').forEach(id=>{ room.addStream(myStream,id); sendVoiceFn&&sendVoiceFn('incall',id) })
+  updateCallUI(); showCallView(); updateVcUsers()
+  addSysMsg('📞 You joined the voice channel'); toast('Joined voice channel')
+}
+
+window.endCall=()=>{
+  if(!inCall) return
+  myStream?.getTracks().forEach(t=>t.stop()); myStream=null
+  inCall=false; isMuted=false
+  sendVoiceFn&&sendVoiceFn('endcall')
+  document.querySelectorAll('audio').forEach(a=>a.remove())
+  Object.keys(peers).filter(k=>k!=='__me__').forEach(id=>{ try{peers[id]._ctx?.close()}catch{}; peers[id]._ctx=null; peers[id].speaking=false; delete peers[id].audioEl })
+  delete peers['__me__']
+  updateCallUI()
+  document.getElementById('callView').classList.remove('on')
+  document.getElementById('chatView').classList.remove('hidden')
+  updateVcUsers(); addSysMsg('📞 You left the voice channel'); toast('Left voice channel')
+}
+
+window.toggleMic=()=>{
+  if(!inCall||!myStream){ toast('Join a voice channel first'); return }
+  isMuted=!isMuted
+  myStream.getAudioTracks().forEach(t=>t.enabled=!isMuted)
+  updateCallUI()
+  const badge=document.getElementById('tilemute___me__')
+  if(badge) badge.className='call-tile-muted'+(isMuted?' on':'')
+}
+
+function updateCallUI(){
+  const mb=document.getElementById('callMicBtn'), ml=document.getElementById('callMicLabel')
+  const sm=document.getElementById('selfMicBtn'), ch=document.getElementById('callHeaderBtn')
+  if(inCall){
+    mb.textContent=isMuted?'🔇':'🎙️'; mb.className='call-ctrl-btn grey'+(isMuted?' muted':'')
+    ml.textContent=isMuted?'Unmute':'Mute'; sm.textContent=isMuted?'🔇':'🎙️'
+    ch.classList.add('active'); ch.title='Leave Voice Channel'
+  } else {
+    mb.textContent='🎙️'; mb.className='call-ctrl-btn grey'; ml.textContent='Mute'
+    sm.textContent='🎙️'; ch.classList.remove('active'); ch.title='Start Voice Call'
+  }
+}
+
+function attachAudio(pid,stream){
+  document.getElementById('au_'+pid)?.remove()
+  const a=document.createElement('audio'); a.id='au_'+pid; a.srcObject=stream; a.autoplay=true; a.playsInline=true
+  document.body.appendChild(a)
+  if(!peers[pid]) peers[pid]={}
+  peers[pid].audioEl=a
+  startVolMonitor(pid,stream); updateUI(); if(inCall) updateCallGrid()
+}
+
+function startVolMonitor(id,stream){
+  try{
+    const ctx=new(window.AudioContext||window.webkitAudioContext)()
+    const src=ctx.createMediaStreamSource(stream)
+    const an=ctx.createAnalyser(); an.fftSize=256; src.connect(an)
+    const buf=new Uint8Array(an.frequencyBinCount)
+    if(!peers[id]) peers[id]={}; peers[id]._ctx=ctx
+    ;(function tick(){
+      if(!peers[id]){ ctx.close(); return }
+      an.getByteFrequencyData(buf)
+      const sp=buf.reduce((s,v)=>s+v,0)/buf.length>8
+      if(peers[id].speaking!==sp){
+        peers[id].speaking=sp
+        const tile=document.getElementById('tile_'+id)
+        if(tile) tile.className='call-tile'+(sp?' speaking':'')
+        updateVcUsers()
+      }
+      requestAnimationFrame(tick)
+    })()
+  }catch{}
+}
+
+function dropPeer(pid){
+  if(!peers[pid]) return
+  document.getElementById('au_'+pid)?.remove()
+  try{peers[pid]._ctx?.close()}catch{}
+  delete peers[pid]; delete typingTimers[pid]
+  if(!Object.keys(typingTimers).length) document.getElementById('typingIndicator').classList.remove('on')
+  updateUI(); if(inCall) updateCallGrid()
+}
+
+// ── MESSAGES ──
+function addMessage({id,from,text,ts,mine,silent}){
+  const msgs=document.getElementById('messages')
+  const timeStr=new Date(ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})
+  const last=msgs.lastElementChild
+  const isChain=last?.dataset?.from===from&&(ts-parseInt(last?.dataset?.ts||0))<5*60000
+
+  const wrap=document.createElement('div')
+  wrap.className='msg-group'+(isChain?'':' with-header')
+  wrap.id='msg_'+id; wrap.dataset.from=from; wrap.dataset.ts=ts
+
+  if(isChain){
+    wrap.innerHTML=`<div class="msg-row"><div class="msg-indent"></div><div><div class="msg-timestamp-hover">${timeStr}</div><div class="msg-content">${escHtml(text)}</div></div></div>`
+  } else {
+    wrap.innerHTML=`<div class="msg-row"><div class="msg-av" style="background:${col(from)}">${esc(from[0].toUpperCase())}</div><div><div class="msg-header"><span class="msg-sender">${esc(from)}</span><span class="msg-timestamp">Today at ${timeStr}</span></div><div class="msg-content">${escHtml(text)}</div></div></div>`
+  }
+  msgs.appendChild(wrap); scrollBottom()
+
+  if(!silent&&!mine){
+    if(!hasFocus&&notifGranted) pushNotif(from,text)
+    else if(!hasFocus){ unread++; updateTitle() }
+  }
+}
+
+function addSysMsg(text){
+  const msgs=document.getElementById('messages')
+  const d=document.createElement('div'); d.className='msg-system'
+  d.innerHTML=`<div class="msg-system-line"></div><div class="msg-system-text">${esc(text)}</div><div class="msg-system-line"></div>`
+  msgs.appendChild(d); scrollBottom()
+}
+
+function scrollBottom(){ const w=document.getElementById('messagesWrap'); w.scrollTop=w.scrollHeight }
+
+// ══ SEND — pushes to Firebase, onChildAdded delivers to everyone ══
+window.sendMsg=()=>{
+  const inp=document.getElementById('msgInput')
+  const text=inp.value.trim(); if(!text) return
+  push(msgRef,{ from:myName, text:text, ts:Date.now() })
+  inp.value=''; inp.style.height='auto'; stopTyping(); inp.focus()
+}
+
+window.handleKey=e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); sendMsg() } }
+window.handleTyping=()=>{
+  const inp=document.getElementById('msgInput')
+  inp.style.height='auto'; inp.style.height=Math.min(inp.scrollHeight,200)+'px'
+  startTypingSignal()
+}
+
+function startTypingSignal(){
+  if(!typingActive){ typingActive=true; sendTypingFn&&sendTypingFn('start') }
+  clearTimeout(myTypingTimer); myTypingTimer=setTimeout(stopTyping,3000)
+}
+function stopTyping(){ if(typingActive){ typingActive=false; sendTypingFn&&sendTypingFn('stop') } clearTimeout(myTypingTimer) }
+function startTypingFor(pid,name){ clearTimeout(typingTimers[pid]); typingTimers[pid]=setTimeout(()=>clearTypingFor(pid),4000); refreshTypingUI(); scrollBottom() }
+function clearTypingFor(pid){ clearTimeout(typingTimers[pid]); delete typingTimers[pid]; refreshTypingUI() }
+function refreshTypingUI(){
+  const keys=Object.keys(typingTimers); const el=document.getElementById('typingIndicator'); const txt=document.getElementById('typingText')
+  if(!keys.length){ el.classList.remove('on'); return }
+  el.classList.add('on')
+  const names=keys.map(k=>peers[k]?.name||'?')
+  txt.textContent=names.length===1?`${names[0]} is typing…`:names.length===2?`${names[0]} and ${names[1]} are typing…`:`${names[0]} and ${names.length-1} others are typing…`
+}
+
+// ── NOTIFICATIONS ──
+window.requestNotifs=async()=>{
+  if(!('Notification' in window)){ toast('Notifications not supported'); return }
+  const p=await Notification.requestPermission(); notifGranted=p==='granted'
+  if(notifGranted){ document.getElementById('notifBanner').classList.remove('on'); toast('🔔 Notifications enabled!') }
+  else toast('Notifications blocked — allow in browser settings')
+}
+window.dismissNotifs=()=>document.getElementById('notifBanner').classList.remove('on')
+
+function pushNotif(from,text){
+  if(!notifGranted) return
+  try{
+    const n=new Notification(`${from} — #general`,{body:text.length>100?text.slice(0,97)+'…':text,tag:'cc01',silent:false})
+    n.onclick=()=>{ window.focus(); n.close() }
+  }catch{}
+}
+
+// ── MISC ──
+window.toggleMembersPanel=()=>{
+  showingMembers=!showingMembers
+  document.getElementById('membersPanel').classList.toggle('on',showingMembers)
+  document.getElementById('membersBtn').classList.toggle('active',showingMembers)
+  updateMembersPanel()
+}
+
+window.leaveRoom=()=>{
+  endCall()
+  document.querySelectorAll('audio').forEach(a=>a.remove())
+  Object.values(peers).forEach(p=>{ try{p._ctx?.close()}catch{} })
+  peers={}; renderedIds=new Set(); historyLoaded=false; typingTimers={}
+  try{room?.leave()}catch{}
+  room=null; sendNameFn=null; sendTypingFn=null; sendVoiceFn=null
+  document.getElementById('app').classList.remove('on')
+  document.getElementById('messages').innerHTML=''
+  document.getElementById('chatLoading').style.display='flex'
+  document.getElementById('lobby').classList.remove('hidden')
+  initLobby()
+}
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
+function escHtml(s){ return esc(s).replace(/\n/g,'<br>') }
+function showLoginErr(m){ const e=document.getElementById('loginErr'); e.textContent=m; e.classList.add('on') }
+function clearLoginErr(){ document.getElementById('loginErr').classList.remove('on') }
+function showOverlay(){ document.getElementById('overlay').classList.add('on') }
+function hideOverlay(){ document.getElementById('overlay').classList.remove('on') }
+let _tt
+function toast(m){ const e=document.getElementById('toast'); e.textContent=m; e.classList.add('on'); clearTimeout(_tt); _tt=setTimeout(()=>e.classList.remove('on'),3000) }
+
+initLobby()
+</script>
 </body>
 </html>
