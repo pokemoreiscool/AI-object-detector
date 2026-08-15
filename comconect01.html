@@ -396,7 +396,7 @@ const msgRef = ref(db, 'messages')
 // errors, which made room.makeAction() come back undefined and crash doJoin().
 // Firebase signaling reuses the same Firebase project above, so it's reliable
 // and doesn't depend on third-party relay uptime.
-import { joinRoom as trysteroJoin } from 'https://esm.sh/trystero/firebase'
+import { joinRoom as trysteroJoin } from 'https://esm.sh/@trystero-p2p/firebase'
 
 const APP_ID  = 'comconnect01-v2'
 const ROOM_ID = 'comconnect01-general'
