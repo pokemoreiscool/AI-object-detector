@@ -387,14 +387,13 @@ import { getDatabase, ref, push, onChildAdded, get, set, child }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js'
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCY7YVRfLq_PRzGLDiVumHitjD5T-lISuY",
-  authDomain: "comconnect01-d99ca.firebaseapp.com",
-  databaseURL: "https://comconnect01-d99ca-default-rtdb.firebaseio.com",
-  projectId: "comconnect01-d99ca",
-  storageBucket: "comconnect01-d99ca.firebasestorage.app",
-  messagingSenderId: "258880878067",
-  appId: "1:258880878067:web:ca520e61ea112738bc0e86",
-  measurementId: "G-LRH2Y8MKL3"
+  apiKey: "AIzaSyBCN3xRfif5HGUEji-cr1LXu6oerJpKyBw",
+  authDomain: "pplchatapi.firebaseapp.com",
+  databaseURL: "https://pplchatapi-default-rtdb.firebaseio.com",
+  projectId: "pplchatapi",
+  storageBucket: "pplchatapi.firebasestorage.app",
+  messagingSenderId: "1077415694560",
+  appId: "1:1077415694560:web:a586f221079611d2598085"
 }
 
 const fbApp  = initializeApp(firebaseConfig)
@@ -461,31 +460,80 @@ function initLobby(){
     av.style.background=col(saved); av.textContent=saved[0].toUpperCase()
     document.getElementById('retName').textContent=saved
     document.getElementById('returningCard').style.display='flex'
-    document.getElementById('nameForm').style.display='none'
-    document.getElementById('joinBtn').textContent='Continue as '+saved
+    document.getElementById('acctForm').style.display='none'
+    document.getElementById('acctBtnRow').style.display='none'
+    document.getElementById('returningJoinRow').style.display='block'
   } else {
     document.getElementById('returningCard').style.display='none'
-    document.getElementById('nameForm').style.display='block'
-    document.getElementById('joinBtn').textContent='Join Server'
-    setTimeout(()=>document.getElementById('nameInput').focus(),100)
+    document.getElementById('acctForm').style.display='block'
+    document.getElementById('acctBtnRow').style.display='flex'
+    document.getElementById('returningJoinRow').style.display='none'
+    setTimeout(()=>document.getElementById('acctUsername').focus(),100)
   }
 }
 
 window.switchUser=()=>{
   cn()
   document.getElementById('returningCard').style.display='none'
-  document.getElementById('nameForm').style.display='block'
-  document.getElementById('joinBtn').textContent='Join Server'
-  document.getElementById('nameInput').value=''
-  document.getElementById('nameInput').focus()
+  document.getElementById('acctForm').style.display='block'
+  document.getElementById('acctBtnRow').style.display='flex'
+  document.getElementById('returningJoinRow').style.display='none'
+  document.getElementById('acctUsername').value=''
+  document.getElementById('acctPassword').value=''
+  document.getElementById('acctUsername').focus()
 }
 
-window.joinChat=async()=>{
-  let name=gn()
-  if(!name){ name=document.getElementById('nameInput').value.trim() }
-  if(!name){ showLoginErr('Please enter your display name.'); return }
-  clearLoginErr(); sn(name); showOverlay()
+window.joinAsReturning=async()=>{
+  const name=gn()
+  if(!name){ initLobby(); return }
+  clearLoginErr(); showOverlay()
   await doJoin(name)
+  hideOverlay()
+}
+
+window.tryAccountRegister=async()=>{
+  clearLoginErr()
+  const uname=document.getElementById('acctUsername').value.trim()
+  const pw=document.getElementById('acctPassword').value
+  if(!uname||!pw){ showLoginErr('Enter a username and password'); return }
+  if(pw.length<4){ showLoginErr('Password must be at least 4 characters'); return }
+  showOverlay()
+  try{
+    const key=sanitizeKey(uname)
+    const acctRef=ref(db,'accounts/'+key)
+    const snap=await get(acctRef)
+    if(snap.exists()){ showLoginErr('That username is already taken'); hideOverlay(); return }
+    const salt=randomSaltHex()
+    const hash=await hashPassword(pw,salt)
+    await set(acctRef,{ username:uname, salt, hash, createdAt:Date.now() })
+    sn(uname)
+    await doJoin(uname)
+  }catch(e){
+    showLoginErr('Error: '+e.message)
+  }
+  hideOverlay()
+}
+
+window.tryAccountLogin=async()=>{
+  clearLoginErr()
+  const uname=document.getElementById('acctUsername').value.trim()
+  const pw=document.getElementById('acctPassword').value
+  if(!uname||!pw){ showLoginErr('Enter a username and password'); return }
+  showOverlay()
+  try{
+    const key=sanitizeKey(uname)
+    const acctRef=ref(db,'accounts/'+key)
+    const snap=await get(acctRef)
+    if(!snap.exists()){ showLoginErr('No account with that username'); hideOverlay(); return }
+    const acct=snap.val()
+    const hash=await hashPassword(pw,acct.salt)
+    if(hash!==acct.hash){ showLoginErr('Wrong password'); hideOverlay(); return }
+    const realName=acct.username||uname
+    sn(realName)
+    await doJoin(realName)
+  }catch(e){
+    showLoginErr('Error: '+e.message)
+  }
   hideOverlay()
 }
 
