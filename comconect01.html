@@ -391,7 +391,12 @@ const db     = getDatabase(fbApp)
 const msgRef = ref(db, 'messages')
 
 // ══ P2P via TRYSTERO (voice + presence only) ══
-import { joinRoom as trysteroJoin } from 'https://esm.sh/trystero/nostr'
+// Using the Firebase strategy instead of nostr — the public nostr relays
+// (relay.nostr.place / relay.damus.io) reject connections with PoW / rate-limit
+// errors, which made room.makeAction() come back undefined and crash doJoin().
+// Firebase signaling reuses the same Firebase project above, so it's reliable
+// and doesn't depend on third-party relay uptime.
+import { joinRoom as trysteroJoin } from 'https://esm.sh/trystero/firebase'
 
 const APP_ID  = 'comconnect01-v2'
 const ROOM_ID = 'comconnect01-general'
@@ -458,8 +463,13 @@ window.joinChat=async()=>{
 
 async function doJoin(name){
   myName=name
-  try{ room=trysteroJoin({appId:APP_ID},ROOM_ID) }
-  catch(e){ showLoginErr('Connection failed. Check your internet.'); return }
+  try{
+    room = trysteroJoin({ appId: APP_ID, firebaseApp: fbApp }, ROOM_ID)
+  }catch(e){
+    console.error(e)
+    showLoginErr('Connection failed. Check your internet.')
+    return
+  }
 
   const [_sn,getName]     = room.makeAction('name')
   const [_st,getTyping]   = room.makeAction('typing')
