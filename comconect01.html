@@ -346,17 +346,7 @@
         <span id="typingText"></span>
       </div>
       <div class="input-area">
-        <div class="input-box">
-          <button class="input-box-btn">➕</button>
-          <textarea id="msgInput" placeholder="Message #general"
-            onkeydown="handleKey(event)" oninput="handleTyping()"></textarea>
-          <div class="input-actions">
-            <button class="icon-btn" style="font-size:.95rem">😊</button>
-            <button class="send-btn" onclick="sendMsg()">➤</button>
-          </div>
-        </div>
-      </div>
-    </div>
+        <div class="
   </div>
 
   <div class="members-panel" id="membersPanel">
@@ -398,24 +388,7 @@ const msgRef = ref(db, 'messages')
 // and doesn't depend on third-party relay uptime.
 import { joinRoom as trysteroJoin } from 'https://esm.sh/@trystero-p2p/firebase'
 
-const APP_ID  = 'comconnect01-v2'
-const ROOM_ID = 'comconnect01-general'
-const SK      = 'cc01_name'
-
-const COLORS = ['#5865f2','#57f287','#eb459e','#faa61a','#ed4245','#3ba55d','#9b59b6','#1abc9c','#e67e22','#e91e63','#00bcd4','#f0b132']
-function col(s){ let h=0; for(const c of s) h=(h*31+c.charCodeAt(0))>>>0; return COLORS[h%COLORS.length] }
-
-const gn = () => { try{ return localStorage.getItem(SK)||'' }catch{ return '' } }
-const sn = v  => { try{ localStorage.setItem(SK,v) }catch{} }
-const cn = () => { try{ localStorage.removeItem(SK) }catch{} }
-
-let room=null, myStream=null, myName='', isMuted=false
-let sendNameFn=null, sendTypingFn=null, sendVoiceFn=null
-let peers={}
-let renderedIds=new Set()
-let inCall=false
-let typingTimers={}, myTypingTimer=null, typingActive=false
-let notifGranted=Notification.permission==='granted'
+const APP_ID  = 'cnted'
 let unread=0, hasFocus=true
 let showingMembers=false
 let historyLoaded=false
@@ -456,44 +429,7 @@ window.joinChat=async()=>{
   let name=gn()
   if(!name){ name=document.getElementById('nameInput').value.trim() }
   if(!name){ showLoginErr('Please enter your display name.'); return }
-  clearLoginErr(); sn(name); showOverlay()
-  await doJoin(name)
-  hideOverlay()
-}
-
-async function doJoin(name){
-  myName=name
-  try{
-    room = trysteroJoin({ appId: APP_ID, firebaseApp: fbApp }, ROOM_ID)
-  }catch(e){
-    console.error(e)
-    showLoginErr('Connection failed. Check your internet.')
-    return
-  }
-
-  const [_sn,getName]     = room.makeAction('name')
-  const [_st,getTyping]   = room.makeAction('typing')
-  const [_sv,getVoice]    = room.makeAction('voice')
-  sendNameFn=_sn; sendTypingFn=_st; sendVoiceFn=_sv
-
-  room.onPeerStream((stream,pid)=>attachAudio(pid,stream))
-
-  room.onPeerJoin(pid=>{
-    if(!peers[pid]) peers[pid]={name:'…'}
-    sendNameFn(myName,pid); updateUI()
-  })
-
-  room.onPeerLeave(pid=>{
-    const n=peers[pid]?.name||'?'
-    dropPeer(pid); addSysMsg(`${n} left`); toast(`${n} disconnected`)
-  })
-
-  getName((name,pid)=>{
-    const isNew=!peers[pid]||peers[pid].name==='…'
-    if(!peers[pid]) peers[pid]={}
-    peers[pid].name=name; updateUI()
-    if(isNew){ addSysMsg(`${name} joined`); toast(`👋 ${name} joined`) }
-    if(inCall&&myStream){ room.addStream(myStream,pid); sendVoiceFn('incall',pid) }
+  clearLoginErr(); sincall',pid) }
   })
 
   getTyping((val,pid)=>{
