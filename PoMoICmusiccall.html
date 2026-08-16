@@ -450,9 +450,21 @@ async function doJoin(name){
   myName=name
   try{
     room = trysteroJoin(
-      { appId: APP_ID, relayRedundancy: 6 },
+      {
+        appId: APP_ID,
+        relayRedundancy: 8,
+        relayUrls: [
+          'wss://broker.emqx.io:8084/mqtt',
+          'wss://broker.hivemq.com:8884/mqtt',
+          'wss://test.mosquitto.org:8081'
+        ]
+      },
       ROOM_ID,
-      { onJoinError: (err)=>console.error('Trystero join error:', err) }
+      { onJoinError: (err)=>{
+          console.error('Trystero join error:', err)
+          toast('⚠️ Signaling error: '+(err?.message||err?.reason||String(err)).slice(0,80))
+        }
+      }
     )
     if(!room || typeof room.makeAction!=='function') throw new Error('Trystero room did not initialize correctly')
 
