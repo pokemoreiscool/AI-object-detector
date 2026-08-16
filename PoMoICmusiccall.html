@@ -458,6 +458,22 @@ async function doJoin(name){
           'wss://broker.emqx.io:8084/mqtt',
           'wss://broker.hivemq.com:8884/mqtt',
           'wss://test.mosquitto.org:8081'
+        ],
+        // Direct phone-to-phone WebRTC often fails on mobile data (carrier-grade
+        // NAT) or restrictive WiFi. A TURN server relays the audio through a
+        // third party when a direct connection can't be made. This is a free
+        // public relay (Open Relay Project) — fine for personal use, but low
+        // bandwidth/no uptime guarantee since it's a shared free service.
+        turnConfig: [
+          {
+            urls: [
+              'turn:openrelay.metered.ca:80',
+              'turn:openrelay.metered.ca:443',
+              'turn:openrelay.metered.ca:443?transport=tcp'
+            ],
+            username: 'openrelayproject',
+            credential: 'openrelayproject'
+          }
         ]
       },
       ROOM_ID,
