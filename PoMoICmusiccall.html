@@ -127,6 +127,7 @@
   .idle-icon { font-size: 3.5rem; opacity: .9; }
   .idle-title { font-size: 1.3rem; font-weight: 700; }
   .idle-sub { color: var(--text-muted); font-size: .92rem; text-align: center; }
+  .conn-status { color: var(--text-muted); font-size: .8rem; text-align: center; margin-top: 4px; }
   .call-cta {
     width: 100%; max-width: 320px; padding: 18px; border-radius: 18px;
     background: var(--green); color: #fff; font-size: 1.05rem; font-weight: 700;
@@ -288,6 +289,7 @@
     <div class="idle-title">Ready to call</div>
     <div class="idle-sub">Tap below and enter a name to ring someone</div>
     <button class="call-cta" onclick="openCallModal()">📞 Call Someone</button>
+    <div class="conn-status" id="connStatus">🔄 Connecting…</div>
   </div>
 
   <!-- In-call -->
@@ -350,7 +352,7 @@ const fbApp = initializeApp(firebaseConfig)
 const db    = getDatabase(fbApp)
 
 // ══ P2P via TRYSTERO (voice + presence only, current API) ══
-import { joinRoom as trysteroJoin } from 'https://esm.sh/@trystero-p2p/torrent'
+import { joinRoom as trysteroJoin } from 'https://esm.sh/@trystero-p2p/mqtt'
 
 const APP_ID  = 'comconnect01-v2'
 const ROOM_ID = 'comconnect01-general'
@@ -548,11 +550,13 @@ async function doJoin(name){
   // Pop up the call picker immediately on load, per request
   setTimeout(openCallModal, 350)
 
-  // Diagnostic: if nobody has been discovered after a while, the tracker
-  // connections (BitTorrent signaling) are likely being blocked by this
-  // network/firewall — let the person know instead of failing silently.
+  // Diagnostic: if nobody has been discovered after a while, signaling is
+  // likely being blocked by this network/firewall — let the person know
+  // instead of failing silently.
   setTimeout(()=>{
-    if(Object.keys(peers).length===0){
+    if(Object.keys(peers).filter(id=>id!=='__me__').length===0){
+      const el=document.getElementById('connStatus')
+      if(el) el.textContent='🔴 Still no connection — this network may be blocking it'
       toast('⚠️ No one found yet — your network may be blocking P2P signaling')
     }
   },12000)
@@ -580,6 +584,16 @@ function updateOnlineLists(){
   if(document.getElementById('callModal').classList.contains('on')){
     renderOnlineRows(document.getElementById('modalOnlineList'), name=>{ closeCallModal(); startCall(name) })
   }
+  updateConnStatus()
+}
+
+function updateConnStatus(){
+  const el=document.getElementById('connStatus')
+  if(!el) return
+  const count=Object.keys(peers).filter(id=>id!=='__me__').length
+  el.textContent = count>0
+    ? `🟢 Connected — ${count} other device${count===1?'':'s'} reachable`
+    : `🔄 Connected to signaling — no other devices found yet`
 }
 
 // ── CALL MODAL ──
