@@ -288,10 +288,6 @@
     <div class="idle-title">Ready to call</div>
     <div class="idle-sub">Tap below and enter a name to ring someone</div>
     <button class="call-cta" onclick="openCallModal()">📞 Call Someone</button>
-    <div class="online-section">
-      <div class="online-label">Online now</div>
-      <div id="onlineList"><div class="online-empty">Nobody else is online right now</div></div>
-    </div>
   </div>
 
   <!-- In-call -->
@@ -488,9 +484,10 @@ async function doJoin(name){
         if(!data.name || data.name.toLowerCase()!==myName.toLowerCase()) return // not for me
         const callerName=data.from||'Someone'
         if(inCall){ sendVoiceFn({t:'busy'},pid); return }
+        inCall=true // claim this immediately so a second simultaneous ring gets a proper 'busy' reply
         try{ myStream=await navigator.mediaDevices.getUserMedia({audio:true,video:false}) }
-        catch(e){ sendVoiceFn({t:'decline'},pid); toast('⚠️ Microphone access denied — missed call from '+callerName); return }
-        inCall=true; isMuted=false; currentCallTarget=pid
+        catch(e){ inCall=false; sendVoiceFn({t:'decline'},pid); toast('⚠️ Microphone access denied — missed call from '+callerName); return }
+        isMuted=false; currentCallTarget=pid
         if(!peers[pid]) peers[pid]={}
         peers[pid].name=callerName
         if(!peers['__me__']) peers['__me__']={}
@@ -567,7 +564,7 @@ function renderOnlineRows(container, onTap){
   const entries=Object.entries(peers).filter(([id,p])=>id!=='__me__'&&p.name&&p.name!=='…')
     .sort(([,a],[,b])=>a.name.localeCompare(b.name))
   if(!entries.length){
-    container.innerHTML='<div class="online-empty">Nobody else is online right now</div>'
+    container.innerHTML='<div class="online-empty">Just type a name above — it\'ll ring them either way</div>'
     return
   }
   entries.forEach(([id,p])=>{
@@ -580,7 +577,6 @@ function renderOnlineRows(container, onTap){
 }
 
 function updateOnlineLists(){
-  renderOnlineRows(document.getElementById('onlineList'), name=>startCall(name))
   if(document.getElementById('callModal').classList.contains('on')){
     renderOnlineRows(document.getElementById('modalOnlineList'), name=>{ closeCallModal(); startCall(name) })
   }
