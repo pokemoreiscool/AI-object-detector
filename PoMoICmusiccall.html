@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<title>ComConnect01 Call</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #1a1b1e;
+    --bg-elevated: #232428;
+    --bg-input: #2c2d31;
+    --accent: #5865f2;
+    --accent-hover: #4752c4;
+    --green: #23a55a;
+    --red: #f23f42;
+    --red-hover: #da373c;
+    --text: #f2f3f5;
+    --text-muted: #96989d;
+    --border: rgba(255,255,255,.08);
+    --radius: 14px;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; overscroll-behavior: none; }
+  body {
+    font-family: 'DM Sans', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 16px;
+    line-height: 1.4;
+    overflow: hidden;
+  }
+  button { cursor: pointer; border: none; font-family: inherit; -webkit-appearance: none; }
+  input { font-family: inherit; }
+
+  /* ---- LOBBY (login) ---- */
+  #lobby {
+    position: fixed; inset: 0; z-index: 200;
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px; padding-top: calc(24px + var(--safe-top)); padding-bottom: calc(24px + var(--safe-bottom));
+  }
+  #lobby.hidden { display: none; }
+  .login-box {
+    background: var(--bg-elevated);
+    border-radius: 20px;
+    padding: 28px 24px;
+    width: 100%; max-width: 380px;
+    box-shadow: 0 12px 32px rgba(0,0,0,.4);
+  }
+  .login-logo { display: flex; align-items: center; gap: 12px; margin-bottom: 22px; }
+  .login-logo-icon {
+    width: 48px; height: 48px; border-radius: 14px; background: var(--accent);
+    display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0;
+  }
+  .login-logo-name { font-size: 1.2rem; font-weight: 700; }
+  .login-logo-tag { font-size: .8rem; color: var(--text-muted); }
+  .form-label { display: block; font-size: .75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 8px; }
+  .form-input {
+    width: 100%; background: var(--bg-input); border: 1px solid transparent;
+    border-radius: 12px; padding: 14px 14px; color: var(--text); font-size: 1rem;
+    outline: none; transition: border-color .15s;
+  }
+  .form-input:focus { border-color: var(--accent); }
+  .form-row { margin-bottom: 16px; }
+  .btn {
+    width: 100%; padding: 14px; border-radius: 12px; font-size: 1rem; font-weight: 600;
+    transition: background .15s, transform .1s;
+  }
+  .btn:active { transform: scale(.98); }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-secondary { background: var(--bg-input); color: var(--text); }
+  .btn-secondary:hover { background: #35363b; }
+  .btn-row { display: flex; gap: 10px; }
+  .btn-row .btn { flex: 1; }
+  .login-returning {
+    display: flex; align-items: center; gap: 14px; background: var(--bg-input);
+    border-radius: 14px; padding: 16px; margin-bottom: 20px;
+  }
+  .login-ret-av {
+    width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center;
+    justify-content: center; font-size: 1.2rem; font-weight: 700; color: #fff; flex-shrink: 0;
+  }
+  .login-ret-name { font-weight: 600; font-size: 1.05rem; }
+  .login-ret-switch { font-size: .82rem; color: #7aa2ff; margin-top: 2px; }
+  .login-err {
+    background: rgba(242,63,66,.12); border: 1px solid rgba(242,63,66,.3);
+    border-radius: 10px; padding: 10px 12px; font-size: .85rem; color: #ff8a8c;
+    margin-top: 14px; display: none;
+  }
+  .login-err.on { display: block; }
+
+  /* ---- APP SHELL ---- */
+  #app { display: none; height: 100dvh; flex-direction: column; }
+  #app.on { display: flex; }
+  .topbar {
+    flex-shrink: 0;
+    display: flex; align-items: center; gap: 10px;
+    padding: calc(14px + var(--safe-top)) 16px 14px;
+    background: var(--bg-elevated);
+    border-bottom: 1px solid var(--border);
+  }
+  .topbar-av {
+    width: 36px; height: 36px; border-radius: 50%; font-size: .95rem; font-weight: 700;
+    color: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; position: relative;
+  }
+  .topbar-av::after {
+    content: ''; position: absolute; bottom: -1px; right: -1px; width: 10px; height: 10px;
+    border-radius: 50%; background: var(--green); border: 2px solid var(--bg-elevated);
+  }
+  .topbar-name { font-weight: 600; font-size: .95rem; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .icon-btn {
+    width: 40px; height: 40px; border-radius: 12px; background: transparent; color: var(--text-muted);
+    display: flex; align-items: center; justify-content: center; font-size: 1.15rem; flex-shrink: 0;
+  }
+  .icon-btn:hover { background: rgba(255,255,255,.06); color: var(--text); }
+  .icon-btn.danger:hover { background: rgba(242,63,66,.15); color: var(--red); }
+
+  /* ---- IDLE SCREEN ---- */
+  #idleScreen {
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 24px; gap: 18px; overflow-y: auto;
+  }
+  .idle-icon { font-size: 3.5rem; opacity: .9; }
+  .idle-title { font-size: 1.3rem; font-weight: 700; }
+  .idle-sub { color: var(--text-muted); font-size: .92rem; text-align: center; }
+  .call-cta {
+    width: 100%; max-width: 320px; padding: 18px; border-radius: 18px;
+    background: var(--green); color: #fff; font-size: 1.05rem; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    box-shadow: 0 8px 20px rgba(35,165,90,.3);
+  }
+  .call-cta:active { transform: scale(.98); }
+  .online-section { width: 100%; max-width: 320px; margin-top: 8px; }
+  .online-label {
+    font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+    color: var(--text-muted); margin-bottom: 8px; padding: 0 4px;
+  }
+  .online-row {
+    display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 12px;
+    background: var(--bg-elevated); margin-bottom: 8px;
+  }
+  .online-row:active { background: var(--bg-input); }
+  .online-av {
+    width: 38px; height: 38px; border-radius: 50%; font-size: .9rem; font-weight: 700;
+    color: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .online-name { flex: 1; font-weight: 600; font-size: .92rem; }
+  .online-call-btn {
+    width: 38px; height: 38px; border-radius: 50%; background: var(--green); color: #fff;
+    display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0;
+  }
+  .online-empty { color: var(--text-muted); font-size: .85rem; text-align: center; padding: 16px 8px; }
+
+  /* ---- CALL VIEW ---- */
+  #callView { flex: 1; display: none; flex-direction: column; overflow: hidden; }
+  #callView.on { display: flex; }
+  .call-grid-wrap {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    padding: 20px; overflow: hidden;
+  }
+  .call-grid { display: grid; gap: 14px; width: 100%; max-width: 480px; }
+  .call-tile {
+    background: var(--bg-elevated); border-radius: 20px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; padding: 24px 16px; position: relative;
+    aspect-ratio: 1; transition: box-shadow .2s;
+  }
+  .call-tile.speaking { box-shadow: 0 0 0 3px var(--green), 0 0 28px rgba(35,165,90,.25); }
+  .call-tile-av {
+    width: 72px; height: 72px; border-radius: 50%; font-size: 1.6rem; font-weight: 700;
+    color: #fff; display: flex; align-items: center; justify-content: center; margin-bottom: 12px;
+  }
+  .call-tile.speaking .call-tile-av { box-shadow: 0 0 0 3px var(--green); }
+  .call-tile-name { font-size: .95rem; font-weight: 600; text-align: center; }
+  .call-tile-you { font-size: .75rem; color: var(--text-muted); margin-top: 2px; }
+  .call-tile-muted {
+    position: absolute; top: 12px; right: 12px; background: var(--red); color: #fff;
+    border-radius: 50%; width: 26px; height: 26px; font-size: .72rem; display: none;
+    align-items: center; justify-content: center;
+  }
+  .call-tile-muted.on { display: flex; }
+  .call-status { text-align: center; color: var(--text-muted); font-size: .85rem; padding: 4px 0 0; }
+  .call-controls {
+    flex-shrink: 0; display: flex; align-items: center; justify-content: center; gap: 20px;
+    padding: 20px 16px calc(24px + var(--safe-bottom));
+    background: var(--bg-elevated); border-top: 1px solid var(--border);
+  }
+  .call-ctrl-group { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .call-ctrl-btn { width: 58px; height: 58px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; }
+  .call-ctrl-btn:active { transform: scale(.95); }
+  .call-ctrl-btn.grey { background: var(--bg-input); color: var(--text); }
+  .call-ctrl-btn.grey.muted { background: var(--red); color: #fff; }
+  .call-ctrl-btn.red { background: var(--red); color: #fff; }
+  .call-ctrl-label { font-size: .72rem; color: var(--text-muted); font-weight: 500; }
+
+  /* ---- CALL MODAL ---- */
+  #callModal {
+    position: fixed; inset: 0; z-index: 300; background: rgba(0,0,0,.6);
+    display: none; align-items: flex-end; justify-content: center;
+  }
+  #callModal.on { display: flex; }
+  .modal-panel {
+    width: 100%; max-width: 480px; background: var(--bg-elevated);
+    border-radius: 22px 22px 0 0; padding: 22px 20px calc(22px + var(--safe-bottom));
+    max-height: 82vh; display: flex; flex-direction: column;
+    animation: slideUp .22s cubic-bezier(.16,1,.3,1);
+  }
+  @keyframes slideUp { from { transform: translateY(24px); opacity: .4; } to { transform: translateY(0); opacity: 1; } }
+  .modal-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 4px; }
+  .modal-sub { font-size: .85rem; color: var(--text-muted); margin-bottom: 18px; }
+  .modal-panel .form-input { margin-bottom: 14px; }
+  .modal-online-list { flex: 1; overflow-y: auto; margin-bottom: 14px; min-height: 0; }
+  .modal-btns { display: flex; gap: 10px; flex-shrink: 0; }
+  .modal-btns .btn { flex: 1; }
+
+  #overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 500;
+    display: none; align-items: center; justify-content: center;
+  }
+  #overlay.on { display: flex; }
+  .spinner { width: 40px; height: 40px; border: 3px solid var(--bg-input); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  #toast {
+    position: fixed; bottom: calc(24px + var(--safe-bottom)); left: 50%;
+    transform: translateX(-50%) translateY(8px);
+    background: #111214; color: var(--text); font-size: .85rem; padding: 11px 18px;
+    border-radius: 12px; opacity: 0; transition: all .25s cubic-bezier(.16,1,.3,1);
+    pointer-events: none; z-index: 9999; box-shadow: 0 4px 24px rgba(0,0,0,.4);
+    max-width: 88vw; text-align: center;
+  }
+  #toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- LOBBY -->
+<div id="lobby">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-logo-icon">📞</div>
+      <div>
+        <div class="login-logo-name">ComConnect01</div>
+        <div class="login-logo-tag">P2P voice calls</div>
+      </div>
+    </div>
+    <div class="login-returning" id="returningCard" style="display:none">
+      <div class="login-ret-av" id="retAvatar"></div>
+      <div style="flex:1;overflow:hidden">
+        <div class="login-ret-name" id="retName"></div>
+      </div>
+    </div>
+    <div id="acctForm">
+      <div class="form-row">
+        <label class="form-label" for="acctUsername">Username</label>
+        <input class="form-input" type="text" id="acctUsername" placeholder="Username" maxlength="28" autocomplete="off">
+      </div>
+      <div class="form-row">
+        <label class="form-label" for="acctPassword">Password</label>
+        <input class="form-input" type="password" id="acctPassword" placeholder="Password" autocomplete="off"
+          onkeydown="if(event.key==='Enter')tryAccountLogin()">
+      </div>
+    </div>
+    <div class="btn-row" id="acctBtnRow">
+      <button class="btn btn-primary" onclick="tryAccountLogin()">Log In</button>
+    </div>
+    <div id="returningJoinRow" style="display:none">
+      <button class="btn btn-primary" onclick="joinAsReturning()">Continue</button>
+    </div>
+    <div class="login-err" id="loginErr"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-av" id="selfAv"></div>
+    <div class="topbar-name" id="selfName"></div>
+    <button class="icon-btn" id="selfMicBtn" onclick="toggleMic()" title="Mute/Unmute">🎙️</button>
+  </div>
+
+  <!-- Idle: not in a call -->
+  <div id="idleScreen">
+    <div class="idle-icon">📞</div>
+    <div class="idle-title">Ready to call</div>
+    <div class="idle-sub">Tap below and enter a name to ring someone</div>
+    <button class="call-cta" onclick="openCallModal()">📞 Call Someone</button>
+    <div class="online-section">
+      <div class="online-label">Online now</div>
+      <div id="onlineList"><div class="online-empty">Nobody else is online right now</div></div>
+    </div>
+  </div>
+
+  <!-- In-call -->
+  <div id="callView">
+    <div class="call-grid-wrap">
+      <div>
+        <div class="call-grid" id="callGrid"></div>
+        <div class="call-status" id="callStatus"></div>
+      </div>
+    </div>
+    <div class="call-controls">
+      <div class="call-ctrl-group">
+        <button class="call-ctrl-btn grey" id="callMicBtn" onclick="toggleMic()">🎙️</button>
+        <div class="call-ctrl-label" id="callMicLabel">Mute</div>
+      </div>
+      <div class="call-ctrl-group">
+        <button class="call-ctrl-btn red" onclick="endCall()">📵</button>
+        <div class="call-ctrl-label">End Call</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Call picker modal -->
+<div id="callModal">
+  <div class="modal-panel">
+    <div class="modal-title">Who do you want to call?</div>
+    <div class="modal-sub">Type a name and we'll ring them</div>
+    <input class="form-input" type="text" id="callTargetInput" placeholder="Enter a name…"
+      autocomplete="off" onkeydown="if(event.key==='Enter')callFromModal()">
+    <div class="modal-online-list" id="modalOnlineList"></div>
+    <div class="modal-btns">
+      <button class="btn btn-secondary" onclick="closeCallModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="callFromModal()">📞 Call</button>
+    </div>
+  </div>
+</div>
+
+<div id="overlay"><div class="spinner"></div></div>
+<div id="toast"></div>
+
+<script type="module">
+// ══ FIREBASE — accounts only, no chat/messages ══
+import { initializeApp }
+  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js'
+import { getDatabase, ref, get, set }
+  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js'
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBCN3xRfif5HGUEji-cr1LXu6oerJpKyBw",
+  authDomain: "pplchatapi.firebaseapp.com",
+  databaseURL: "https://pplchatapi-default-rtdb.firebaseio.com",
+  projectId: "pplchatapi",
+  storageBucket: "pplchatapi.firebasestorage.app",
+  messagingSenderId: "1077415694560",
+  appId: "1:1077415694560:web:a586f221079611d2598085"
+}
+
+const fbApp = initializeApp(firebaseConfig)
+const db    = getDatabase(fbApp)
+
+// ══ P2P via TRYSTERO (voice + presence only, current API) ══
+import { joinRoom as trysteroJoin } from 'https://esm.sh/@trystero-p2p/torrent'
+
+const APP_ID  = 'comconnect01-v2'
+const ROOM_ID = 'comconnect01-general'
+const SK      = 'cc01_name'
+
+const COLORS = ['#5865f2','#57f287','#eb459e','#faa61a','#ed4245','#3ba55d','#9b59b6','#1abc9c','#e67e22','#e91e63','#00bcd4','#f0b132']
+function col(s){ let h=0; for(const c of s) h=(h*31+c.charCodeAt(0))>>>0; return COLORS[h%COLORS.length] }
+
+const gn = () => { try{ return localStorage.getItem(SK)||'' }catch{ return '' } }
+const sn = v  => { try{ localStorage.setItem(SK,v) }catch{} }
+const cn = () => { try{ localStorage.removeItem(SK) }catch{} }
+
+function sanitizeKey(name){ return name.replace(/[.#$\[\]\/]/g,'_') }
+
+async function hashPassword(password, saltHex){
+  const enc = new TextEncoder()
+  const data = enc.encode(saltHex+':'+password)
+  const digest = await crypto.subtle.digest('SHA-256', data)
+  return Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,'0')).join('')
+}
+function randomSaltHex(){
+  const arr = crypto.getRandomValues(new Uint8Array(16))
+  return Array.from(arr).map(b=>b.toString(16).padStart(2,'0')).join('')
+}
+
+let room=null, myStream=null, myName='', isMuted=false
+let sendNameFn=null, sendVoiceFn=null
+let peers={}
+let inCall=false
+let currentCallTarget=null
+let ringing=false, ringTimeout=null, ringingTargetName=''
+
+// ── LOBBY ──
+function initLobby(){
+  const saved=gn()
+  if(saved){
+    const av=document.getElementById('retAvatar')
+    av.style.background=col(saved); av.textContent=saved[0].toUpperCase()
+    document.getElementById('retName').textContent=saved
+    document.getElementById('returningCard').style.display='flex'
+    document.getElementById('acctForm').style.display='none'
+    document.getElementById('acctBtnRow').style.display='none'
+    document.getElementById('returningJoinRow').style.display='block'
+  } else {
+    document.getElementById('returningCard').style.display='none'
+    document.getElementById('acctForm').style.display='block'
+    document.getElementById('acctBtnRow').style.display='flex'
+    document.getElementById('returningJoinRow').style.display='none'
+    setTimeout(()=>document.getElementById('acctUsername').focus(),150)
+  }
+}
+
+window.joinAsReturning=async()=>{
+  const name=gn()
+  if(!name){ initLobby(); return }
+  clearLoginErr(); showOverlay()
+  await doJoin(name)
+  hideOverlay()
+}
+
+window.tryAccountLogin=async()=>{
+  clearLoginErr()
+  const uname=document.getElementById('acctUsername').value.trim()
+  const pw=document.getElementById('acctPassword').value
+  if(!uname||!pw){ showLoginErr('Enter a username and password'); return }
+  showOverlay()
+  try{
+    const key=sanitizeKey(uname)
+    const acctRef=ref(db,'accounts/'+key)
+    const snap=await get(acctRef)
+    if(!snap.exists()){
+      // First time this username has been used — create the account now.
+      if(pw.length<4){ showLoginErr('Password must be at least 4 characters'); hideOverlay(); return }
+      const salt=randomSaltHex()
+      const hash=await hashPassword(pw,salt)
+      await set(acctRef,{ username:uname, salt, hash, createdAt:Date.now() })
+      sn(uname)
+      await doJoin(uname)
+      hideOverlay()
+      return
+    }
+    const acct=snap.val()
+    const hash=await hashPassword(pw,acct.salt)
+    if(hash!==acct.hash){ showLoginErr('Wrong password'); hideOverlay(); return }
+    const realName=acct.username||uname
+    sn(realName)
+    await doJoin(realName)
+  }catch(e){
+    showLoginErr('Error: '+e.message)
+  }
+  hideOverlay()
+}
+
+async function doJoin(name){
+  myName=name
+  try{
+    room = trysteroJoin(
+      { appId: APP_ID, relayRedundancy: 6 },
+      ROOM_ID,
+      { onJoinError: (err)=>console.error('Trystero join error:', err) }
+    )
+    if(!room || typeof room.makeAction!=='function') throw new Error('Trystero room did not initialize correctly')
+
+    const nameAction  = room.makeAction('name')
+    const voiceAction = room.makeAction('voice')
+    sendNameFn  = (data,pid)=>nameAction.send(data, pid?{target:pid}:undefined)
+    sendVoiceFn = (data,pid)=>voiceAction.send(data, pid?{target:pid}:undefined)
+
+    room.onPeerStream = (stream,pid)=>attachAudio(pid,stream)
+
+    room.onPeerJoin = pid=>{
+      if(!peers[pid]) peers[pid]={name:'…'}
+      sendNameFn(myName,pid); updateOnlineLists()
+    }
+
+    room.onPeerLeave = pid=>{
+      const n=peers[pid]?.name||'?'
+      dropPeer(pid); toast(`${n} disconnected`)
+    }
+
+    nameAction.onMessage = (name,{peerId:pid})=>{
+      const isNew=!peers[pid]||peers[pid].name==='…'
+      if(!peers[pid]) peers[pid]={}
+      peers[pid].name=name; updateOnlineLists()
+      if(isNew) toast(`👋 ${name} is online`)
+    }
+
+    voiceAction.onMessage = async(data,{peerId:pid})=>{
+      // ── RING: someone is trying to call "data.name" — broadcast to everyone, only the match responds ──
+      if(data && data.t==='ring'){
+        if(!data.name || data.name.toLowerCase()!==myName.toLowerCase()) return // not for me
+        const callerName=data.from||'Someone'
+        if(inCall){ sendVoiceFn({t:'busy'},pid); return }
+        try{ myStream=await navigator.mediaDevices.getUserMedia({audio:true,video:false}) }
+        catch(e){ sendVoiceFn({t:'decline'},pid); toast('⚠️ Microphone access denied — missed call from '+callerName); return }
+        inCall=true; isMuted=false; currentCallTarget=pid
+        if(!peers[pid]) peers[pid]={}
+        peers[pid].name=callerName
+        if(!peers['__me__']) peers['__me__']={}
+        peers['__me__'].name=myName
+        startVolMonitor('__me__',myStream)
+        room.addStream(myStream,{target:pid})
+        sendVoiceFn({t:'accept'},pid)
+        updateCallUI(); showCallView(); updateCallGrid()
+        toast(`📞 Connected with ${callerName}`)
+        return
+      }
+      // ── ACCEPT: the person we rang picked up ──
+      if(data && data.t==='accept'){
+        if(!ringing || inCall) return
+        clearTimeout(ringTimeout); ringing=false
+        inCall=true; currentCallTarget=pid
+        if(!peers[pid]) peers[pid]={}
+        peers[pid].name=ringingTargetName
+        room.addStream(myStream,{target:pid})
+        updateCallUI(); showCallView(); updateCallGrid()
+        document.getElementById('callStatus').textContent=''
+        toast(`📞 Connected with ${ringingTargetName}`)
+        return
+      }
+      // ── BUSY / DECLINE: the person we rang can't take it ──
+      if(data && (data.t==='busy'||data.t==='decline')){
+        if(!ringing) return
+        clearTimeout(ringTimeout); ringing=false
+        myStream?.getTracks().forEach(t=>t.stop()); myStream=null
+        showIdleScreen()
+        toast(data.t==='busy' ? `${ringingTargetName} is on another call` : `${ringingTargetName} couldn't answer`)
+        return
+      }
+      // ── ENDCALL: hang up signal from the active call partner ──
+      if(data && data.t==='endcall'){
+        document.getElementById('au_'+pid)?.remove()
+        if(peers[pid]){ peers[pid].speaking=false; delete peers[pid].audioEl }
+        if(currentCallTarget===pid) hangUpLocal('Call ended')
+        updateCallGrid()
+      }
+    }
+
+    sendNameFn(myName)
+  }catch(e){
+    console.error('Trystero join failed:',e)
+    showLoginErr('Connection failed: '+e.message)
+    hideOverlay()
+    return
+  }
+
+  document.getElementById('lobby').classList.add('hidden')
+  document.getElementById('app').classList.add('on')
+  const av=document.getElementById('selfAv')
+  av.style.background=col(myName); av.textContent=myName[0].toUpperCase()
+  document.getElementById('selfName').textContent=myName
+  updateOnlineLists()
+
+  // Pop up the call picker immediately on load, per request
+  setTimeout(openCallModal, 350)
+
+  // Diagnostic: if nobody has been discovered after a while, the tracker
+  // connections (BitTorrent signaling) are likely being blocked by this
+  // network/firewall — let the person know instead of failing silently.
+  setTimeout(()=>{
+    if(Object.keys(peers).length===0){
+      toast('⚠️ No one found yet — your network may be blocking P2P signaling')
+    }
+  },12000)
+}
+
+// ── ONLINE LISTS (idle screen + modal) ──
+function renderOnlineRows(container, onTap){
+  container.innerHTML=''
+  const entries=Object.entries(peers).filter(([id,p])=>id!=='__me__'&&p.name&&p.name!=='…')
+    .sort(([,a],[,b])=>a.name.localeCompare(b.name))
+  if(!entries.length){
+    container.innerHTML='<div class="online-empty">Nobody else is online right now</div>'
+    return
+  }
+  entries.forEach(([id,p])=>{
+    const row=document.createElement('div')
+    row.className='online-row'
+    row.innerHTML=`<div class="online-av" style="background:${col(p.name)}">${esc(p.name[0].toUpperCase())}</div><div class="online-name">${esc(p.name)}</div><div class="online-call-btn">📞</div>`
+    row.onclick=()=>onTap(p.name)
+    container.appendChild(row)
+  })
+}
+
+function updateOnlineLists(){
+  renderOnlineRows(document.getElementById('onlineList'), name=>startCall(name))
+  if(document.getElementById('callModal').classList.contains('on')){
+    renderOnlineRows(document.getElementById('modalOnlineList'), name=>{ closeCallModal(); startCall(name) })
+  }
+}
+
+// ── CALL MODAL ──
+window.openCallModal=()=>{
+  document.getElementById('callTargetInput').value=''
+  renderOnlineRows(document.getElementById('modalOnlineList'), name=>{ closeCallModal(); startCall(name) })
+  document.getElementById('callModal').classList.add('on')
+  setTimeout(()=>document.getElementById('callTargetInput').focus(),200)
+}
+window.closeCallModal=()=>{ document.getElementById('callModal').classList.remove('on') }
+window.callFromModal=()=>{
+  const name=document.getElementById('callTargetInput').value.trim()
+  if(!name) return
+  closeCallModal()
+  startCall(name)
+}
+
+// ── CALL ──
+function showCallView(){ document.getElementById('idleScreen').style.display='none'; document.getElementById('callView').classList.add('on') }
+function showIdleScreen(){ document.getElementById('callView').classList.remove('on'); document.getElementById('idleScreen').style.display='flex' }
+
+async function startCall(targetName){
+  if(inCall||ringing) return
+  if(!targetName||!targetName.trim()){ toast('Enter a username to call'); return }
+  targetName=targetName.trim()
+  try{ myStream=await navigator.mediaDevices.getUserMedia({audio:true,video:false}) }
+  catch(e){ toast('⚠️ Microphone access denied or not found'); return }
+  if(!room){ toast('⚠️ Not connected yet — try again in a moment'); myStream.getTracks().forEach(t=>t.stop()); myStream=null; return }
+
+  isMuted=false
+  if(!peers['__me__']) peers['__me__']={}
+  peers['__me__'].name=myName
+  startVolMonitor('__me__',myStream)
+
+  ringing=true; ringingTargetName=targetName
+  sendVoiceFn({t:'ring', name:targetName, from:myName})
+  showCallView(); updateCallGrid()
+  document.getElementById('callStatus').textContent=`Calling ${targetName}…`
+  toast(`Calling ${targetName}…`)
+
+  clearTimeout(ringTimeout)
+  ringTimeout=setTimeout(()=>{
+    if(!ringing) return
+    ringing=false
+    myStream?.getTracks().forEach(t=>t.stop()); myStream=null
+    delete peers['__me__']
+    showIdleScreen()
+    toast(`${targetName} didn't answer`)
+  },20000)
+}
+
+window.endCall=()=>{
+  if(ringing){
+    ringing=false; clearTimeout(ringTimeout)
+    myStream?.getTracks().forEach(t=>t.stop()); myStream=null
+    delete peers['__me__']
+    showIdleScreen()
+    toast('Call cancelled')
+    return
+  }
+  if(!inCall) return
+  if(currentCallTarget) sendVoiceFn&&sendVoiceFn({t:'endcall'},currentCallTarget)
+  hangUpLocal('Call ended')
+}
+
+function hangUpLocal(msg){
+  myStream?.getTracks().forEach(t=>t.stop()); myStream=null
+  inCall=false; isMuted=false; currentCallTarget=null
+  document.querySelectorAll('audio').forEach(a=>a.remove())
+  Object.keys(peers).filter(k=>k!=='__me__').forEach(id=>{ try{peers[id]._ctx?.close()}catch{}; peers[id]._ctx=null; peers[id].speaking=false; delete peers[id].audioEl })
+  try{peers['__me__']?._ctx?.close()}catch{}
+  delete peers['__me__']
+  updateCallUI()
+  showIdleScreen()
+  updateOnlineLists()
+  toast(msg)
+}
+
+window.toggleMic=()=>{
+  if(!inCall||!myStream){ toast('Not in a call'); return }
+  isMuted=!isMuted
+  myStream.getAudioTracks().forEach(t=>t.enabled=!isMuted)
+  updateCallUI()
+  const badge=document.getElementById('tilemute___me__')
+  if(badge) badge.className='call-tile-muted'+(isMuted?' on':'')
+}
+
+function updateCallUI(){
+  const mb=document.getElementById('callMicBtn'), ml=document.getElementById('callMicLabel'), sm=document.getElementById('selfMicBtn')
+  if(inCall){
+    mb.textContent=isMuted?'🔇':'🎙️'; mb.className='call-ctrl-btn grey'+(isMuted?' muted':'')
+    ml.textContent=isMuted?'Unmute':'Mute'; sm.textContent=isMuted?'🔇':'🎙️'
+  } else {
+    mb.textContent='🎙️'; mb.className='call-ctrl-btn grey'; ml.textContent='Mute'; sm.textContent='🎙️'
+  }
+}
+
+function updateCallGrid(){
+  const grid=document.getElementById('callGrid'); grid.innerHTML=''
+  const pp=[]
+  if(inCall||ringing) pp.push({id:'__me__',name:myName,isMe:true,muted:isMuted,speaking:peers['__me__']?.speaking})
+  Object.entries(peers).filter(([,p])=>p.audioEl).forEach(([id,p])=>pp.push({id,name:p.name||'…',speaking:p.speaking}))
+  if(!pp.length){ grid.style.gridTemplateColumns='1fr'; return }
+  grid.style.gridTemplateColumns=pp.length<=1?'1fr':'repeat(2,1fr)'
+  const statusEl=document.getElementById('callStatus')
+  if(pp.length>1&&statusEl) statusEl.textContent=''
+  pp.forEach(p=>{
+    const tile=document.createElement('div')
+    tile.className='call-tile'+(p.speaking?' speaking':''); tile.id='tile_'+p.id
+    tile.innerHTML=`<div class="call-tile-muted${p.muted?' on':''}" id="tilemute_${p.id}">🔇</div><div class="call-tile-av" style="background:${col(p.name)}">${esc(p.name[0].toUpperCase())}</div><div class="call-tile-name">${esc(p.name)}</div>${p.isMe?'<div class="call-tile-you">You</div>':''}`
+    grid.appendChild(tile)
+  })
+}
+
+function attachAudio(pid,stream){
+  document.getElementById('au_'+pid)?.remove()
+  const a=document.createElement('audio'); a.id='au_'+pid; a.srcObject=stream; a.autoplay=true; a.playsInline=true
+  document.body.appendChild(a)
+  if(!peers[pid]) peers[pid]={}
+  peers[pid].audioEl=a
+  startVolMonitor(pid,stream); updateOnlineLists(); if(inCall) updateCallGrid()
+}
+
+function startVolMonitor(id,stream){
+  try{
+    const ctx=new(window.AudioContext||window.webkitAudioContext)()
+    const src=ctx.createMediaStreamSource(stream)
+    const an=ctx.createAnalyser(); an.fftSize=256; src.connect(an)
+    const buf=new Uint8Array(an.frequencyBinCount)
+    if(!peers[id]) peers[id]={}; peers[id]._ctx=ctx
+    ;(function tick(){
+      if(!peers[id]){ ctx.close(); return }
+      an.getByteFrequencyData(buf)
+      const sp=buf.reduce((s,v)=>s+v,0)/buf.length>8
+      if(peers[id].speaking!==sp){
+        peers[id].speaking=sp
+        const tile=document.getElementById('tile_'+id)
+        if(tile) tile.className='call-tile'+(sp?' speaking':'')
+      }
+      requestAnimationFrame(tick)
+    })()
+  }catch{}
+}
+
+function dropPeer(pid){
+  if(!peers[pid]) return
+  document.getElementById('au_'+pid)?.remove()
+  try{peers[pid]._ctx?.close()}catch{}
+  if(currentCallTarget===pid) hangUpLocal('Call ended — they disconnected')
+  delete peers[pid]
+  updateOnlineLists(); if(inCall) updateCallGrid()
+}
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
+function showLoginErr(m){ const e=document.getElementById('loginErr'); e.textContent=m; e.classList.add('on') }
+function clearLoginErr(){ document.getElementById('loginErr').classList.remove('on') }
+function showOverlay(){ document.getElementById('overlay').classList.add('on') }
+function hideOverlay(){ document.getElementById('overlay').classList.remove('on') }
+let _tt
+function toast(m){ const e=document.getElementById('toast'); e.textContent=m; e.classList.add('on'); clearTimeout(_tt); _tt=setTimeout(()=>e.classList.remove('on'),3000) }
+
+initLobby()
+</script>
+</body>
+</html>
