@@ -527,9 +527,13 @@ async function doJoin(name){
         peers['__me__'].name=myName
         startVolMonitor('__me__',myStream)
         room.addStream(myStream,{target:pid})
-        sendVoiceFn({t:'accept'},pid)
         updateCallUI(); showCallView(); updateCallGrid()
         toast(`📞 Connected with ${callerName}`)
+        // Wait for our own track-add negotiation to settle before telling the
+        // caller to add theirs — doing both at once causes a WebRTC
+        // renegotiation collision where one side's audio silently never
+        // arrives (this was the one-way-audio bug).
+        setTimeout(()=>sendVoiceFn({t:'accept'},pid), 900)
         return
       }
       // ── ACCEPT: the person we rang picked up ──
